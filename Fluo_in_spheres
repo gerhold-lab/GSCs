@@ -1,0 +1,530 @@
+//setBatchMode(true);
+
+dir = getDirectory("Please choose a source directory.");
+
+function ANDAndAdd () {/////////////Make the intersection area of all ROIs that are in the same frame and same slice
+numROIs = roiManager("count");
+flute = newArray(numROIs+1);
+guitare = newArray(numROIs);
+                for(r=0; r<numROIs;r++) {/////loop through ROIs and get position
+	            roiManager("Select", r);
+	            Stack.getPosition(channel, slice, frame)
+                guitare[r]=r;//////guitare array is the original ROIs list before I add the "AND". We will delete them after.
+                flute[r]=slice;
+                } 
+
+Array.print(flute);
+numflute = lengthOf(flute);
+print(numflute);
+sax = newArray("0");////Array where we will put ROIs that are in the same slice. 
+        for(s=0; s<numflute;s++) {
+        if (s > 0) {           	
+        if(flute[s-1] == flute[s]){////check if the slice in flute is the same slice in the next.
+            sax = Array.concat(sax, s);
+            }   
+        else { 
+                    roiManager("Select", sax[0]);/////select the first roi of sax. (all the other ROI should have the same slice)
+                    Stack.getPosition(channel, slice, frame);
+                    roiManager("deselect");
+                    roiManager("Select", sax);
+                    if(lengthOf(sax)>1){/////check the lenght of sax (number of ROIs in the same slice/frame), if there is two or more, make the "AND" 
+                    roiManager("AND");
+                    typeofselect = selectionType(); ///////(-1 if there is no selection (ie if rois in sax are not touching each other)
+                    if(typeofselect == -1){ /////////////// check if there is an "AND", you can't add it if there is none
+                    sax = newArray("0");////////make a new array if there is none	
+                    }
+                    else{////"add" if there is an "AND"
+                    roiManager("add");
+                    roiManager("Update");
+                    numROIsA = roiManager("count");
+                    /////select the last ROI in the list (the one we just added) and set its position
+                    roiManager("Select", numROIsA-1);
+                    Stack.setPosition(channel, slice, frame);
+                    roiManager("Update");
+                    sax = newArray("0"); 
+                    }
+                    }
+                    else{
+                    sax = newArray("0"); 
+                    }
+              sax = newArray("0"); 
+              sax[0]=s;
+        }
+        }
+        }  
+
+  /////// delete guitare( all the original ROIs that are not "AND")
+roiManager("select", guitare);
+roiManager("delete");
+}
+
+function CombineAndAdd () {///////////Combine all ROIs that are in the same frame and same slice
+numROIs = roiManager("count");
+flute = newArray(numROIs+1);
+guitare = newArray(numROIs);
+            for(r=0; r<numROIs;r++) {/////loop through ROIs and get position
+	            roiManager("Select", r);
+	            Stack.getPosition(channel, slice, frame)
+                guitare[r]=r;//////guitare array is the original ROIs list before I add the "AND". We will delete them after.
+                flute[r]=slice;
+                } 
+numflute = lengthOf(flute);
+sax = newArray("0");////Array where we will put ROIs that are in the same slice.
+        for(s=0; s<numflute;s++) {
+        if (s > 0) {           	
+        if(flute[s-1] == flute[s]){///check if the slice in flute is the same slice in the next.
+            sax = Array.concat(sax, s);
+            }   
+        else {      roiManager("deselect");
+                    roiManager("Select", sax[0]);/////select the first roi of sax. (all the other ROI should have the same slice)
+                    Stack.getPosition(channel, slice, frame);
+                    roiManager("deselect");
+                    roiManager("Select", sax);
+                    if(lengthOf(sax)>1){////check the lenght of sax (number of ROIs in the same slice/frame),
+                    roiManager("combine");
+                    roiManager("add");
+                    roiManager("Update");
+                    numROIsA = roiManager("count");
+                    roiManager("Select", numROIsA-1);
+                    } 
+                    else{
+                    roiManager("add");
+                    roiManager("Update");
+                    numROIsA = roiManager("count");
+                    roiManager("Select", numROIsA-1);
+                    }
+                    Stack.setPosition(channel, slice, frame);
+                    roiManager("Update");
+                    roiManager("deselect");
+                    sax = newArray("0"); 
+                    sax[0]=s;
+        }
+        }
+        }
+roiManager("select", guitare);////delete original ROIs
+roiManager("delete"); 
+}
+
+
+function GetFiles(dir) {//////// get csv files and send to sphere function
+	list = getFileList(dir);
+	Array.sort(list);  
+    for (i=0; i<list.length; i++) {
+    	
+    		if (endsWith(list[i], ".csv")) {
+    			 
+    				path = dir+list[i];
+    				sphere(path);
+    		}	
+    }
+}
+
+function GetFilesII(dir) {//////////get tif files and send to gonad function
+	list = getFileList(dir);
+	Array.sort(list);  
+    for (i=0; i<list.length; i++) {
+    	
+    		
+    		if (endsWith(list[i], ".tif")) {
+    			 
+    				path = dir+list[i];
+    				gonad(path);
+    		}			 	
+    }
+}
+
+	
+function sphere(path) {//////draw the spheres on the size according to matlab, please adjust the radius because the segmentation of the rachis is not perfect
+   
+	Table.open(path);
+	
+	root = substring(path, 0, lastIndexOf(path, "\\")+1);
+	bob = ""+list[i]+"";
+    sal = substring(bob, 0, lastIndexOf(bob, ".csv"));
+	File.makeDirectory(""+root+"\\"+sal+"\\");
+	out = ""+root+"\\"+sal+"\\";
+
+
+
+    selectWindow(""+list[i]+"");   
+	FramesNumber = Table.size;
+
+
+	////////get data in the csv file
+	Frames = Table.getColumn("C1");
+    xcoord = Table.getColumn("C2");
+    ycoord = Table.getColumn("C3");
+    zcoord = Table.getColumn("C4");
+    radius = Table.getColumn("C5");
+    
+    selectWindow(""+list[i]+"");
+    run("Close");    
+ 
+    
+    A = indexOf(""+list[i]+"", "_Sphere_");  
+    B = substring(""+list[i]+"", 0, A);
+
+   ///////check the size of the original tif image (B) corresponding to the csv file
+   run("Bio-Formats Macro Extensions"); 
+   Ext.setId(""+dir+""+B+".tif"); 
+   Ext.getSizeX(width); 
+   Ext.getSizeY(height); 
+   Ext.getSizeZ(slices); 
+   Ext.getSizeT(sizeT); 
+    
+   Array.getStatistics(Frames, min, max, mean, stdDev);//////get statistics of the Frames column of the csv file
+
+
+    
+   for (j=1; j<(sizeT+1); j++) {
+ 
+   if ((j >= min) & (j <= max)) {///////check if the frame has a sphere for the cell
+
+   
+   radius[j-min] = (radius[j-min]) + 1.5;      //////adjust radius
+
+
+   //////// Draw the spheres
+  
+   run("3D Draw Shape", "size="+width+","+height+","+slices+" center="+xcoord[j-min]+","+ycoord[j-min]+","+zcoord[j-min]+" radius="+radius[j-min]+","+radius[j-min]+","+radius[j-min]+" vector1=1.0,0.0,0.0 vector2=0.0,1.0,0.0 res_xy=0.180 res_z=0.500 unit=microns value=255 display=[New stack]");
+   selectImage("Shape3D");
+   saveAs("Tiff", ""+out+"Sphere_Frame_"+j+".tif");
+   selectImage("Sphere_Frame_"+j+".tif");
+   wait(50);
+   run("Close");
+   }
+
+   ///////// if not, draw a sphere of size 0
+   else {run("3D Draw Shape", "size="+width+","+height+","+slices+" center=1,1,1 radius=0,0,0 vector1=1.0,0.0,0.0 vector2=0.0,1.0,0.0 res_xy=0.180 res_z=0.500 unit=microns value=255 display=[New stack]");
+   selectImage("Shape3D");
+   saveAs("Tiff", ""+out+"Sphere_Frame_"+j+".tif");
+   selectImage("Sphere_Frame_"+j+".tif");
+   wait(50);
+   run("Close");
+   	  
+   }
+ }
+   
+
+   /////////open the serie of spheres and make an hyperstack
+   run("Image Sequence...", "open=["+out+"Sphere_Frame_"+1+".tif] sort");
+   run("Stack to Hyperstack...", "order=xyczt(default) channels=1 slices="+slices+" frames="+sizeT+" display=Color");
+   
+   for (j=1; j<(sizeT+1); j++) {
+   File.delete(""+out+"Sphere_Frame_"+j+".tif");
+   }
+   
+   C = indexOf(""+list[i]+"", ".csv");
+   D = substring(""+list[i]+"", 0, C);
+   selectImage(D);   
+   setAutoThreshold("Default dark");
+   //run("Threshold...");
+   setOption("BlackBackground", false);
+   run("Convert to Mask", "method=Default background=Dark calculate");
+   saveAs("Tiff", ""+out+""+D+".tif");
+   wait(2000);
+   run("Close");
+
+   listc= getList("image.titles");
+  if (listc.length==0)
+     print("No image window are open in list c");
+ else {
+    print("Image windows in list c:");
+     for (m=0; m<listc.length; m++)
+        print("   "+listc[m]);
+  }
+ print("");
+
+for (m=0; m<listc.length; m++){
+        close(listc[m]);
+          }	 
+
+
+run("Close All");
+    
+}
+
+
+
+
+function gonad(path) {//////////Draw the ROIs of rachis, spheres, intersections, backgrounds and measure bleaching curve of the rachis
+
+    rooti = substring(path, 0, lastIndexOf(path, "\\")+1);
+	bobi = ""+list[i]+"";
+    sali = substring(bobi, 0, lastIndexOf(bobi, ".tif"));
+	outi = ""+rooti+"\\"+sali+"\\";
+    File.makeDirectory(""+rooti+"\\"+sali+"\\rachis\\");
+    woowi = ""+rooti+"\\"+sali+"\\rachis\\";
+    
+////open the serie of rachis segmentation.    
+run("Image Sequence...", "open=["+outi+"stk_0001_rachischanel.tif] sort");
+
+//////check the size of the original tiff
+run("Bio-Formats Macro Extensions"); 
+   Ext.setId(""+dir+""+list[i]+""); 
+   Ext.getSizeX(width); 
+   Ext.getSizeY(height); 
+   Ext.getSizeZ(slices);
+   Ext.getSizeT(sizeT); 
+
+
+ //////make an hyperstack
+run("Stack to Hyperstack...", "order=xyczt(default) channels=1 slices="+slices+" frames="+sizeT+" display=Color");
+saveAs("Tiff", ""+woowi+""+list[i]+"_rachis");
+selectImage(""+list[i]+"_rachis.tif");
+roiManager("reset");
+wait(2000);
+
+
+/////Analyze particules
+run("Analyze Particles...", "add stack");
+selectImage(""+list[i]+"_rachis.tif");
+CombineAndAdd ();///// slow step
+roiManager("Save", ""+woowi+""+list[i]+"_rachis.zip");
+roiManager("deselect");                 
+roiManager("reset");
+wait(2000);
+run("Close All");
+
+////Make a list of CSV files of spheres corresponding to the gonad
+listA = getFileList(dir);
+csvfiles = newArray(0);
+E = indexOf(""+list[i]+"", ".tif");
+F = substring(""+list[i]+"", 0, E); 
+    for (k=0; k<listA.length; k++) {
+    		if (endsWith(""+listA[k]+"", ".csv")) {
+    			G = indexOf(""+listA[k]+"", "_Sphere_Cell");
+    			H = substring(""+listA[k]+"", 0, G);
+    			if (H == F) {/////check if the beginning of name of the csv file correspond to the name of the original tif
+    				csvfiles = Array.concat(csvfiles, ""+listA[k]+"");
+    		}
+    }
+    }
+Array.print(csvfiles);
+open(""+dir+""+list[i]+"");
+selectImage(""+list[i]+"");
+run("Split Channels");
+selectImage("C2-"+list[i]+"");
+close();
+                    for (l=0; l<csvfiles.length; l++) {  //////Loop through the corresponding csv files
+                    roote = substring(path, 0, lastIndexOf(path, "\\")+1);
+	                bobe = ""+csvfiles[l]+"";
+                    sale = substring(bobe, 0, lastIndexOf(bobe, ".csv"));
+	                oute = ""+roote+"\\"+sale+"\\";
+	                print(oute);
+	                G = indexOf(""+csvfiles[l]+"", ".csv");
+                    H = substring(""+csvfiles[l]+"", 0, G);
+                    print(""+csvfiles[l]+"");
+                    open( ""+oute+""+H+".tif");//////open the corresponding sphere tif
+                    roiManager("open", ""+woowi+""+list[i]+"_rachis.zip");//////open the rachis ROIs list
+                    run("Analyze Particles...", "add stack");///////analyse particules of the spheres
+                    roiManager("sort");
+                    selectImage(""+H+".tif");
+                    ANDAndAdd ();/////make the "AND" (slow)
+                    roiManager("Save", ""+oute+""+csvfiles[l]+"AND.zip");
+                    numROIs = roiManager("count");
+                    selectImage("C1-"+list[i]+"");
+                    ResultsFluo();////measure the FI and arrange results
+                    saveAs("Results", ""+ouaouaron+""+csvfiles[l]+"AND.csv");
+                    wait(2000);
+                    if (isOpen("Results")) { 
+                    selectWindow("Results"); 
+                    run("Close"); 
+                    }
+
+                      //////Make background 
+                    selectImage(""+H+".tif");/////select sphere tif
+                    run("Invert LUT");
+                    roiManager("deselect");
+                    selectImage(""+H+".tif");/////select sphere tif
+                    numROIs = roiManager("count");
+                          for(r=0; r<numROIs;r++) {//////loop through ROIs "AND" and fill it
+                          roiManager("Select", r);	
+                          roiManager("Fill");	
+                          }
+                    selectImage(""+H+".tif");
+                    run("Invert LUT");                   
+                    roiManager("reset");
+                    run("Analyze Particles...", "add stack");
+                    roiManager("Save", ""+oute+""+csvfiles[l]+"background.zip");
+                    numROIs = roiManager("count");
+                    selectImage("C1-"+list[i]+"");
+                    ResultsFluo();//////measure FI and arrange results
+                    saveAs("Results", ""+ouaouaron+""+csvfiles[l]+"Background.csv");
+                    roiManager("reset");
+                    selectImage(""+H+".tif");
+                    close(); 
+    		        }
+
+//////make bleaching curve    		        
+open( ""+woowi+""+list[i]+"_rachis.tif");////////open rachis segmentation
+run("Z Project...", "projection=[Max Intensity] all");
+run("Fill Holes", "stack");
+run("Erode", "stack");
+run("Erode", "stack");
+roiManager("reset");
+run("Analyze Particles...", "size=350-Infinity add stack");
+roiManager("Save", ""+woowi+""+list[i]+"_rachis_bleach.zip");
+selectImage("C1-"+list[i]+"");//////select original chanel
+run("Z Project...", "projection=[Max Intensity] all");
+numROIs = roiManager("count");
+RachisArea = newArray(numROIs);
+RachisMean = newArray(numROIs);
+RachisIntDen = newArray(numROIs);
+RachisRawIntDen = newArray(numROIs);
+Slices = newArray(numROIs);
+Frames = newArray(numROIs);
+        for(u=0; u<numROIs;u++) {
+        roiManager("Select", u);
+        Stack.getPosition(channel, slice, frame);
+        Slices[u] = slice;
+        Frames[u] = frame;
+        run("Set Measurements...", "area mean integrated stack redirect=None decimal=3");
+        run("Measure");////////measure FI and arrange results	
+        RachisArea[u] = getResult("Area", u);
+        RachisMean[u] = getResult("Mean", u);
+        RachisIntDen[u] = getResult("IntDen", u);
+        RachisRawIntDen[u] = getResult("RawIntDen", u);
+        }
+selectImage("C1-"+list[i]+"");        
+close();         
+run("Clear Results");         
+        for(u=0; u<numROIs;u++) {
+        setResult("Slices", u, ""+Slices[u]+"");
+        setResult("Frames", u, ""+Frames[u]+"");
+        setResult("RachisArea", u, ""+RachisArea[u]+"");
+        setResult("RachisMean", u, ""+RachisMean[u]+"");
+        setResult("RachisIntDen", u, ""+RachisIntDen[u]+"");
+        }
+saveAs("Results", ""+woowi+""+list[i]+"_rachis.csv");
+wait(2000);
+        if (isOpen("Results")) { 
+         selectWindow("Results"); 
+         run("Close"); 
+         } 
+run("Close All");
+}
+
+function ResultsFluo(){///////measure fluorescence and make compilation by frames.
+numROIs = roiManager("count");
+Area = newArray(numROIs);
+Mean = newArray(numROIs);
+IntDen = newArray(numROIs);
+RawIntDen = newArray(numROIs);
+Slices = newArray(numROIs);
+Frames = newArray(numROIs); 
+        for(u=0; u<numROIs;u++) {
+        roiManager("Select", u);
+        Stack.getPosition(channel, slice, frame);
+        Slices[u] = slice;
+        Frames[u] = frame;
+        run("Set Measurements...", "area mean integrated stack redirect=None decimal=3");
+        run("Measure");	
+        Area[u] = getResult("Area", u);
+        Mean[u] = getResult("Mean", u);
+        IntDen[u] = getResult("IntDen", u);
+        RawIntDen[u] = getResult("RawIntDen", u);
+        }
+run("Clear Results");                 
+        for(u=0; u<numROIs;u++) {//////arrange results
+        setResult("Slices", u, ""+Slices[u]+"");
+        setResult("Frames", u, ""+Frames[u]+"");
+        setResult("Area", u, ""+Area[u]+"");
+        setResult("Mean", u, ""+Mean[u]+"");
+        setResult("IntDen", u, ""+IntDen[u]+"");
+        }        
+Table.update;
+numCorr = lengthOf(IntDen);
+Frame = newArray(numCorr+1);
+IntDen = newArray(numCorr);
+Mean = newArray(numCorr);
+Area = newArray(numCorr);
+numFrames = lengthOf(Frames);
+        
+        for(g=0; g<numCorr;g++) {
+        Frame[g] = getResult("Frames", g);
+        IntDen[g] = getResult("IntDen", g);
+        Mean[g] = getResult("Mean", g);
+        Area[g] = getResult("Area", g);
+        }        
+Array.print(Frame);
+drum = newArray("0");
+drumM = newArray("0");
+drumA = newArray("0");
+Array.getStatistics(Frames, min, max, mean, stdDev);
+Total = newArray(0);
+TotalM = newArray(0);
+TotalA = newArray(0);
+
+        for(w=0; w<numFrames;w++) {
+        if(w == 0){
+        	drum[0] = IntDen[w];
+        	drumM[0] = Mean[w];
+        	drumA[0] = Area[w];	
+        }
+        else {if(Frame[w-1] == Frame[w]){           	
+            drum = Array.concat(drum, ""+IntDen[w]+"");
+            drumM = Array.concat(drumM, ""+Mean[w]+"");
+            drumA = Array.concat(drumA, ""+Area[w]+"");
+            }             
+        else {
+              Table.setColumn("IntDenFrame"+Frame[w-1]+"", drum);
+              Table.setColumn("MeanFrame"+Frame[w-1]+"", drumM);
+              Table.setColumn("AreaFrame"+Frame[w-1]+"", drumA);
+                 total = 0;
+                 totalM = 0;
+                 totalA = 0;
+              for (x=0;x<lengthOf(drum);x++){ 
+                 total = total+drum[x];
+                 totalM = totalM+drumM[x];
+                 totalA = totalA+drumA[x];
+                }
+              totalM = totalM/lengthOf(drum);////make the mean of mean fluorenscence int., total and totalA stay simple addition. 
+              Total = Array.concat(Total, total);
+              TotalM = Array.concat(TotalM, totalM);
+              TotalA = Array.concat(TotalA, totalA);
+              drum = newArray("0");
+              drumM = newArray("0");
+              drumA = newArray("0");
+              if(w < numFrames-1){
+              drum[0]=IntDen[w];
+              drumM[0]=Mean[w];
+              drumA[0]=Area[w]; 
+              }
+        }
+        }
+        }        
+run("Clear Results"); 
+Table.setColumn("IntDenTotal", Total);
+Table.setColumn("MeanTotal", TotalM);
+Table.setColumn("AreaTotal", TotalA);            
+}
+
+    
+
+
+
+
+
+listc= getList("image.titles");
+  if (listc.length==0)
+     print("No image window are open in list c");
+ else {
+    print("Image windows in list c:");
+     for (m=0; m<listc.length; m++)
+        print("   "+listc[m]);
+  }
+ print("");
+
+for (m=0; m<listc.length; m++){
+        close(listc[m]);
+          }	     
+        
+     
+    
+	
+File.makeDirectory(""+dir+"\\Results\\");
+ouaouaron = ""+dir+"\\Results\\";   	
+GetFiles(dir);
+GetFilesII(dir);
+
