@@ -13,9 +13,9 @@ perc99=651.9214;
 
 % if you are refreshing workspace from another version that include columnIdx
 % this field of Germlineoutput structure is deleted 
-if isfield(Germlineoutput,'columnIdx')==1
-    Germlineoutput = rmfield(Germlineoutput, 'columnIdx');
-end
+% if isfield(Germlineoutput,'columnIdx')==1
+%     Germlineoutput = rmfield(Germlineoutput, 'columnIdx');
+% end
 
 A = exist('Celloutput');
 if A ~= 1

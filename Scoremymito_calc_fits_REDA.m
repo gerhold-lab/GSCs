@@ -399,7 +399,7 @@
              
             meanSpinLength(i,1) = Celloutput(i).out(1,2);
             STdevSpinLength(i,1) = Celloutput(i).out(1,3);
-            if DurCong(i,1) ~= 1 && DurCong(i,1) ~= 2 && ~isnan(DurCong(i,1))
+            if ~isnan(DurCong2(i,1))
                 SpinElongationRate(i,1) =  Celloutput(i).scoring(4,1);
             else
                 SpinElongationRate(i,1) = NaN;
@@ -415,9 +415,9 @@
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-            if isa(Germlineoutput(j).meas,'table')==1
-                Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
-            end
+%             if isa(Germlineoutput(j).meas,'table')==1
+%                 Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+%             end
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
             Germlineoutput(j).meas(:,2) = CongStart(boo,1);
