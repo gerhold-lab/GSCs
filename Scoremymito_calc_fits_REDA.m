@@ -1,6 +1,25 @@
     % calculate the duration of congression for cells for which both the
     % start and end of congression occurred during the image acquisition
-    [~,kk] = size(Celloutput)
+    % you may want to change this values (seconds), modify here :
+    % Duration of congression considered delayed (95th percentiles of your control set)
+    % Duration of congression considered strongly delayed (99th percentiles
+    % of your control set)
+
+    prompt = {'Duration of congression considered delayed (95th percentiles of your control set) in seconds : ','Duration of congression considered delayed (99th percentiles of your control set) in seconds :'};
+    dlgtitle = 'Input';
+    dims = [1 35];
+    definput = {'503.2096','651.9214'};
+    answer = inputdlg(prompt,dlgtitle,dims,definput);
+
+    perc95= str2num(cell2mat(answer(1,1)));
+    perc99= str2num(cell2mat(answer(2,1)));
+    
+A = exist('Celloutput');
+if A ~= 1
+    error('No Celloutput variable in the work space');
+else
+    [~,kk] = size(Celloutput);
+end 
     for j = 1:1:kk
         [row, col] = size(Celloutput(j).meas);
         Fs = Celloutput(j).scoring(1,1);
@@ -227,7 +246,14 @@
         end
     
         for i = 1:1:kk
-            Framerate(i,1) = Celloutput(i).meas(2,2) - Celloutput(i).meas(1,2);
+            
+            %determine the frame rate between 2 consecutive time points
+            for ff = 1:1:(length(Celloutput(i).meas)-1)
+              if Celloutput(i).meas((ff+1),1) - Celloutput(i).meas(ff,1) == 1
+                 Framerate(i,1) = Celloutput(i).meas((ff+1),2) - Celloutput(i).meas(ff,2);
+              end
+            end
+            
             Gonads{i,1} = Celloutput(i).gonad;
             Cells{i,1} = Celloutput(i).cell;
         
@@ -415,9 +441,9 @@
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-%             if isa(Germlineoutput(j).meas,'table')==1
-%                 Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
-%             end
+            if numel(fieldnames(Germlineoutput)) > 6
+                 Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+            end
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
             Germlineoutput(j).meas(:,2) = CongStart(boo,1);
@@ -578,5 +604,4 @@
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end
-
-        clearvars -except Celloutput Germlineoutput Tiff_fileList
+clearvars -except Celloutput Germlineoutput Tiff_fileList

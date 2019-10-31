@@ -169,11 +169,11 @@ for i = 1:1:length(TrackMate_fileList)
             Ncount = histc(boo(:,5), moo);
             loo = moo(Ncount ~= 1);
             frameerrors = num2str(loo);
-            error(['For ', id, ' in ', gonad, ' there is more than 1 spot per a frame at ', frameerrors '. Check TrackMate file.'])
+            error(['For ', id, ' in ', gonad, ' there is more than 1 spot per a frame at ', '. Check TrackMate file.'])
         else
             foo_aligned = NaN(size(boo));
             for k = 1:1:numframes
-                if sum(foo(:,5)==boo(k,5)) == 1;
+                if sum(foo(:,5)==boo(k,5)) == 1
                     foo_aligned(k,:) = foo(foo(:,5)==boo(k,5),:);
                 end
             end
