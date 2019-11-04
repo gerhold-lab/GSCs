@@ -8,8 +8,13 @@
 % Before running this script use the CropCells macro in ImageJ to crop out
 % each tracked cell. Because the fileList was generated before these tifs
 % and ROI lists were made, it is neccessary to regenerate the fileList
+answer = questdlg({'Before running this script use the CropCells macro in ImageJ to crop out each tracked cell';
+    'This script allows to score NEBD,congression start and end of congression';
+    'Click on the graph using the cross hairs as close to the correct x-coordinates as possible';
+    'If user clicks mouse, script proceed with scoring from graph'; 
+    'If user clicks button, script opens corresponding image file to allow user to compare image to graph';'run Scoremymito_calc_fits when done';
+    'if you make a mistake, take note of the cell, continue your scoring then run Scoremymito_check_fit_and_scoring_ALL' },'Welcome to ScoreMymito','continue','cancel');
 fileList = getAllFiles(folder);
-
 % Find all the .tif files in 'fileList'
 boo = strfind(fileList,'tif');
 %cellfun Apply function to each cell in cell array
@@ -53,6 +58,8 @@ else
         plot(X1,Y1,'Marker','o','Color',[0 0 1]);
         % Add title
         title({Celloutput(j).gonad;Celloutput(j).cell},'Interpreter','none');
+        xlabel('Frames')
+        ylabel('Mitotic spindle length')
         % Increase height of y-axis so that graphs are not cut off
         axis([xstart xstop 1 11]);
         % Add line at time = 0 for visual aid in scoring
@@ -93,10 +100,16 @@ else
             % User inputs frame value corresponding to congression start
             % and stop, as assessed from image file. If not possible to
             % score --> enter NaN;
+            prompt = {'Enter frame corresponding to congression start :','Enter frame corresponding to congression end :'};
+            dlgtitle = 'Input';
+            dims = [1 35];
+            definput = {'NaN','NaN'};
+            opts.WindowStyle = 'normal';
+            answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
             figure(Hh.Parent) % Brings implay window to front
-            CongS = input('Enter frame corresponding to congression start');
-            %figure(Hh.Parent) % Brings implay window to front
-            CongE = input('Enter frame corresponding to congression end');
+            CongS = str2num(cell2mat(answer(1,1)));      
+            %figure(Hh.Parent) % Brings implay window to front          
+            CongE = str2num(cell2mat(answer(2,1)));
             close(Hh);
             CongS = CongS + firstframe - 1;
             CongE = CongE + firstframe - 1;

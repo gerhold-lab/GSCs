@@ -1,25 +1,27 @@
-    % calculate the duration of congression for cells for which both the
-    % start and end of congression occurred during the image acquisition
-    % you may want to change this values (seconds), modify here :
-    % Duration of congression considered delayed (95th percentiles of your control set)
-    % Duration of congression considered strongly delayed (99th percentiles
-    % of your control set)
+% Last update 26/08/2019
+% Refresh calculation if modification after using Scoremymito_scoremitosisALL.m
+% Convert also output of master code to reda version
+% If Germlineoutput.meas is not a table :
+% Convert Germlinoutput.meas cells into table with titles and add new fields showing :
 
-    prompt = {'Duration of congression considered delayed (95th percentiles of your control set) in seconds : ','Duration of congression considered delayed (99th percentiles of your control set) in seconds :'};
-    dlgtitle = 'Input';
-    dims = [1 35];
-    definput = {'503.2096','651.9214'};
-    answer = inputdlg(prompt,dlgtitle,dims,definput);
+% you may want to change this values (seconds), modify here :
+perc95=503.2096;
+perc99=651.9214;
 
-    perc95= str2num(cell2mat(answer(1,1)));
-    perc99= str2num(cell2mat(answer(2,1)));
-    
+% if you are refreshing workspace from another version that include columnIdx
+% this field of Germlineoutput structure is deleted 
+if isfield(Germlineoutput,'columnIdx')==1
+    Germlineoutput = rmfield(Germlineoutput, 'columnIdx');
+end
+
 A = exist('Celloutput');
 if A ~= 1
     error('No Celloutput variable in the work space');
 else
     [~,kk] = size(Celloutput);
 end 
+% calculate the duration of congression for cells for which both the
+% start and end of congression occurred during the image acquisition
     for j = 1:1:kk
         [row, col] = size(Celloutput(j).meas);
         Fs = Celloutput(j).scoring(1,1);
@@ -47,138 +49,19 @@ end
             SLcong = Celloutput(j).meas(Celloutput(j).meas(:,1)>=min(Fscong) & Celloutput(j).meas(:,1)<=max(Fscong),3);
             SLana = Celloutput(j).meas(Celloutput(j).meas(:,1)>=min(Fsana) & Celloutput(j).meas(:,1)<=max(Fsana),3);
             
-            % Try to fit nebd, congression and anaphase time points with a linear polynomial curve
-            try
-                N = fit(Tnebd,SLnebd,'poly1');
-                C = fit(Tcong,SLcong,'poly1');
-                A = fit(Tana,SLana,'poly1');
-            catch
-                xstart = min(Celloutput(j).meas(:,1));
-                firstframe = xstart;
-                xstop = max(Celloutput(j).meas(:,1));
-                % Ideally the x-axis would be roughly the same scale for all graphs
-                % (i.e. the same number of time points, since spreading different
-                % numbers of time points over the same length x-axis can distort the curves
-                % and bias/complicate the scoring)
-                xrange = xstop - xstart;
-                if xrange < 79
-                    xstart = round(xstart + xrange/2) - 40;
-                    xstop = round(xstop - xrange/2) + 40;
-                end
-                % Create figure full screen
-                figure1 = figure('units','normalized','outerposition',[0 0 1 1]);
-                % Create axes
-                % sets the x-axis tick values 
-                axes1 = axes('Parent',figure1,'XTick',[xstart:2:xstop],'XGrid','on');
-                box(axes1,'on');
-                hold(axes1,'all');
-                % Create plot - frames/spindle length
-                X1 = Celloutput(j).meas(:,1);
-                Y1 = Celloutput(j).meas(:,3);
-                plot(X1,Y1,'Marker','o','Color',[0 0 1]);
-                % Add title and labels
-                title({Celloutput(j).gonad;Celloutput(j).cell},'Interpreter','none');
-                xlabel('Frames')
-                ylabel('Mitotic spindle length')
-                % Increase height of y-axis so that graphs are not cut off
-                axis([xstart xstop 1 11]);
-                % Add line at time = 0 for visual aid in scoring
-                yL = get(gca,'YLim');
-                line([0 0],yL,'Color','g','LineWidth',2);
-                % Show most recent graph window
-                shg;
-                % This allows each cell to be scored by clicking on the graph
-                % generated above
-        
-                % Identify congression start = first frame where spindle length <= mean 
-                % length during congression and congression end = last frame of congression prior to 
-                % rapid/anaphase spindle elongation.
-        
-                % Click on the graph using the cross hairs as close to the correct
-                % x-coordinates as possible. Script will round x-value clicked on
-                % to the nearest integar.
-          
-                % Last mitotic event scored will be written in the graph as
-                
-                % a reminder
-                [x1,y1] = ginput(1);
-                text(x1,y1,'NEBD');%Add text after click
-                x(1) = round(x1);
-                [x2,y2] = ginput(1);
-                text(x2,y2,'start');
-                x(2) = round(x2);
-                [x3,y3] = ginput(1);
-                text(x3,y3,'end');
-                x(3) = round(x3);
-         
-                % x(1) = NEBD, if possible to discern from spindle length plot
-                % x(2) = start of congression
-                % x(3) = end of congression
-   
-        
-                % If the start of congression occurred before the first frame of
-                % the image acquisition and the end of congression occurred after
-                % the last frame of the image acquisition (i.e. the cell was
-                % arrested in mitosis for the entire image acquisition), click
-                % outside of the figure plot to the left, first, and then to the
-                % right.
-        
-                % If the start of congression occurred before the first frame of the
-                % image acquisition, click outside of the figure plot to the left.
-
-                % If the end of congression occurred after the last frame of the
-                % image acquisition, click outside of the figure plot to the right.
-        
-                % If both the start of congression and the end of congression
-                % occurred before the first frame of the image acquisition (i.e.
-                % the cell was in anaphase or later at time = 0), click 2x outside 
-                % of the figure plot to the left.
-
-                % If both the start of congression and the end of congression
-                % occurred after the last frame of the image acquisition (i.e.
-                % the cell was still in prophase at last image frame), click 2x outside 
-                % of the figure plot to the right.
-        
-                if x(2) < xstart
-                    x(2) = NaN;
-                end
-                if x(2) > xstop
-                    x(2) = 5000;
-                end
-                if x(3) > xstop
-                    x(3)=NaN;
-                end
-                if x(3) < xstart
-                    x(3) = -5000;
-                end
-                if x(1) < xstart || x(1) > xstop
-                    x(1) = NaN;
-                end
-        
-                % This will give 6 possible configurations for x: 
-                % [x(2) x(3)] = full congression
-                % [NaN, x(3)] = no start, end OK
-                % [5000, NaN] = start and end after acquisition end/cell in
-                % prophase
-                % [x(2), NaN] = start OK, no end
-                % [NaN, -5000] = start and end before acquisition start/cell in
-                % anaphase/telophase
-                % [NaN, NaN] = start before acquisition start and end after
-                % acquisition end/cell arrested for entire acquisition
-  
-                % add congression end/start values to Celloutput
-                Fs = x(2);
-                Fe = x(3);
-                nebd = x(1);
-                Celloutput(j).scoring(1,1) = Fs;
-                Celloutput(j).scoring(1,2) = Fe;
-                Celloutput(j).scoring(1,3) = nebd;
-                close(figure1);
-            end
-           
-            % Pull out the values of the coefficients for each fit
+            % Fit nebd time points with a linear polynomial curve
+            N = fit(Tnebd,SLnebd,'poly1');
+            % Pull out the values of the coefficients for the nebd fit
             CoefN = coeffvalues(N);
+            
+            % Fit congression time points with a linear polynomial curve
+            C = fit(Tcong,SLcong,'poly1');
+            % Pull out the values of the coefficients for the congression fit
             CoefC = coeffvalues(C);
+            
+            % Fit anaphase time points with a linear polynomial curve
+            A = fit(Tana,SLana,'poly1');
+            % Pull out the values of the coefficients for the anaphase fit
             CoefA = coeffvalues(A);
             
             % find the x-position of the intersection points of the nebd and congression
@@ -213,17 +96,15 @@ end
     NEBD = NaN(kk,1);
     CongStart = NaN(kk,1);
     CongEnd = NaN(kk,1);
+    CongEnd2 = NaN(kk,1);
     NEBDtoAna = NaN(kk,1);
-    % variables for duration of congression raw or binned by delay categories 
     DurCong = NaN(kk,1);%%% duration of congression,values corresponds to the group cells belong to 
-    DurCong2 = NaN(kk,1);%%% duration of congression raw 
+    DurCong2 = NaN(kk,1);%%% duration of congression 
     meanSpinLength = NaN(kk,1);
     STdevSpinLength = NaN(kk,1);
-    SpinElongationRate = NaN(kk,1);
-    % Dividind cells are binned in bins of 5 minutes depending on when the
-    % event occurs
+    SpinElongationRate = NaN(kk,1); 
     NEBDbin = NaN(kk,1);%%% Start of NEBD, values corresponds to the group cells belong to
-    CongEndbin= NaN(kk,1);%%% End of congression, values corresponds to the group cells belong to
+    CongEndbin = NaN(kk,1);
     
     Framerate = NaN(kk,1);
     Gonads = cell(kk,1);
@@ -249,22 +130,14 @@ end
         end
     
         for i = 1:1:kk
-            
-            %determine the frame rate between 2 consecutive time points
-            for ff = 1:1:(length(Celloutput(i).meas(:,1))-1)
-              if Celloutput(i).meas((ff+1),1) - Celloutput(i).meas(ff,1) == 1
-                 Framerate(i,1) = Celloutput(i).meas((ff+1),2) - Celloutput(i).meas(ff,2);
-              end
-            end
-            
+            if Celloutput(i).meas(2,2) - Celloutput(i).meas(1,2)
+            Framerate(i,1) = Celloutput(i).meas(2,2) - Celloutput(i).meas(1,2);
             Gonads{i,1} = Celloutput(i).gonad;
-            Cells{i,1} = Celloutput(i).cell;
-        
+            Cells{i,1} = Celloutput(i).cell;     
             NEBD(i,1) = Celloutput(i).scoring(1,3) * Framerate(i,1);
-        
-           
-            %Dividind cells are binned in bins of 5 minutes depending on when the
-            % NEBD starts, works for movies of 90 minutes maximum
+            
+            %%% 
+            
             if NEBD(i,1) <300 %%% 300 seconds
             NEBDbin(i,1) = 1;
             elseif NEBD(i,1) <600
@@ -304,8 +177,7 @@ end
             else
             NEBDbin(i,1) = NaN;
             end
-         
-
+           
             
             if isnan(Celloutput(i).scoring(1,1)) || Celloutput(i).scoring(1,1) == 5000 || isnan(Celloutput(i).scoring(1,2)) || Celloutput(i).scoring(1,2) == -5000
                 CongStart(i,1) = Celloutput(i).scoring(1,1);
@@ -328,9 +200,6 @@ end
                 CongEnd2(i,1)= NaN;
             end
             
-            
-            %Dividind cells are binned in bins of 5 minutes depending on when the
-            % Congression ends , works for movies of 90 minutes maximum
             if CongEnd2(i,1) <300 %%% 300 seconds
             CongEndbin(i,1) = 1;
             elseif CongEnd2(i,1) <600
@@ -370,10 +239,10 @@ end
             else
             CongEndbin(i,1) = NaN;
             end
-        
+                     
             NEBDtoAna(i,1) = CongEnd(i,1) - NEBD(i,1);
-           
-            %%% Group cells into bins depending on congression duration
+            
+             %%% Group cells into bins depending on congression duration
              % 1= in congression during entire movie aka arrested
              % 2= in congression between 95th percentiles of
              % controls dataset) and 99th percentiles of
@@ -382,8 +251,8 @@ end
              % delayed
              % 4=in congression for less than  95th percentiles of
              % controls dataset considered not delayed
-        
-             if isnan(CongStart(i,1)) && isnan(CongEnd(i,1))
+             
+            if isnan(CongStart(i,1)) && isnan(CongEnd(i,1))
                 DurCong(i,1) = 1; %%%arrested
             elseif CongStart(i,1) == -5000 || CongEnd(i,1) == 5000
                 DurCong(i,1) = NaN; 
@@ -415,38 +284,46 @@ end
                 else
                     DurCong(i,1) = 4;  %%%not delayed
                 end
-             end 
-
-             %%% Duration of congression raw
+            end
+            
+            %%% Duration of congression raw
             if isnan(CongStart(i,1)) || isnan(CongEnd(i,1)) || CongStart(i,1) == -5000 || CongEnd(i,1) == 5000             
                 DurCong2(i,1) = NaN;
             else
                 DurCong2(i,1) = CongEnd(i,1) - CongStart(i,1);
             end
            
-           
-             
             meanSpinLength(i,1) = Celloutput(i).out(1,2);
             STdevSpinLength(i,1) = Celloutput(i).out(1,3);
             if ~isnan(DurCong2(i,1))
                 SpinElongationRate(i,1) =  Celloutput(i).scoring(4,1);
             else
                 SpinElongationRate(i,1) = NaN;
+                
             end
+            
  % If the start/end of congression was defined by the fit, it takes
  % the fitted value, otherwise the scored values are used. CongStart
- % and CongEnd will have time in seconds or NaNs, if occured before or
- % after start of acquisition. CongStart will have NaNs for cells where 
- % congression started before or after the start/end of image acquisition
+ % and CongEnd will have time in seconds, NaNs or 5000 or -5000,
+ % depending on the scoring rubric described above.
+ % CongStart will have NaNs for cells where congression started before the
+ % start of image acquisition (cells post NEBD at t=0)
+ % and 5000 for cells where the start of congression was
+ % after the end of image acquistion (cells in prophase at t = end)
+ % CongEnd will have NaNs for cells where congression ended after the 
+ % end of image acquistion (cells pre-anaphase onset t = end)
+ % and -5000 for cells where the end of congression was
+ % before the start of image acquistion (cells post-anaphase onset at t=0)
         end
+        
                for j = 1:1:BB
             worm = Germlineoutput(j).gonad;
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-            if numel(fieldnames(Germlineoutput)) > 6
+             if isa(Germlineoutput(j).meas,'table')==1
                  Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
-            end
+             end
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
             Germlineoutput(j).meas(:,2) = CongStart(boo,1);
@@ -607,4 +484,6 @@ end
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end
-clearvars -except Celloutput Germlineoutput Tiff_fileList
+
+        clearvars -except Celloutput Germlineoutput Tiff_fileList
+end

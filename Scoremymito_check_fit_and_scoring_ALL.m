@@ -11,9 +11,15 @@
     dims = [1 35];
     definput = {'503.2096','651.9214'};
     answer = inputdlg(prompt,dlgtitle,dims,definput);
-
     perc95= str2num(cell2mat(answer(1,1)));
     perc99= str2num(cell2mat(answer(2,1)));
+    
+    
+    answer = questdlg({'This script allows to visualize previous scoring of NEBD,congression start and end of congression';
+    'Click on the graph to move to the next cell';
+    'To modify your scoring, click a keyboard button, script opens corresponding image file to allow user to compare image to graph';
+     },'Welcome to ScoreMymito','continue','cancel');
+
 A = exist('Celloutput');
 if A ~= 1
     error('No Celloutput variable in the work space');
@@ -46,6 +52,9 @@ else
         plot(X1,Y1,'Marker','o','Color',[0 0 1]);
         % Add title
         title({Celloutput(j).gonad;Celloutput(j).cell},'Interpreter','none');
+        xlabel('Frames')
+        ylabel('Mitotic spindle length')
+        % Increase height of y-axis so that graphs are not cut off
         axis([xstart xstop 1 11]);
         % Add vertical lines corresponding to scoring
         Frs = Celloutput(j).scoring(1,1);
@@ -114,9 +123,16 @@ else
             % and stop, as assessed from image file. If not possible to
             % score --> enter NaN;
             figure(Hh.Parent) % Brings implay window to front
-            CongS = input('Enter frame corresponding to congression start');
-            %figure(Hh.Parent) % Brings implay window to front
-            CongE = input('Enter frame corresponding to congression end');
+            prompt = {'Enter frame corresponding to congression start :','Enter frame corresponding to congression end :'};
+            dlgtitle = 'Input';
+            dims = [1 35];
+            definput = {'NaN','NaN'};
+            opts.WindowStyle = 'normal';
+            answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
+            figure(Hh.Parent) % Brings implay window to front
+            CongS = str2num(cell2mat(answer(1,1)));      
+            %figure(Hh.Parent) % Brings implay window to front          
+            CongE = str2num(cell2mat(answer(2,1)));
             close(Hh);
             CongS = CongS + firstframe - 1;
             CongE = CongE + firstframe - 1;
