@@ -248,7 +248,7 @@ end
         for i = 1:1:kk
             
             %determine the frame rate between 2 consecutive time points
-            for ff = 1:1:(length(Celloutput(i).meas)-1)
+            for ff = 1:1:(length(Celloutput(i).meas(:,1))-1)
               if Celloutput(i).meas((ff+1),1) - Celloutput(i).meas(ff,1) == 1
                  Framerate(i,1) = Celloutput(i).meas((ff+1),2) - Celloutput(i).meas(ff,2);
               end
