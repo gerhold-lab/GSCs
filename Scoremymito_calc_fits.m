@@ -5,7 +5,7 @@
     % Duration of congression considered strongly delayed (99th percentiles
     % of your control set)
 
-    prompt = {'Duration of congression considered delayed (95th percentiles of your control set) in seconds : ','Duration of congression considered delayed (99th percentiles of your control set) in seconds :'};
+    prompt = {'Duration of congression considered delayed (95th percentiles of your control set) in seconds : ','Duration of congression considered strongly delayed (99th percentiles of your control set) in seconds :'};
     dlgtitle = 'Input';
     dims = [1 35];
     definput = {'503.2096','651.9214'};
