@@ -19,6 +19,7 @@ if A ~= 1
     error('No Celloutput variable in the work space');
 else
     [~,kk] = size(Celloutput);
+    
 end 
     for j = 1:1:kk
         [row, col] = size(Celloutput(j).meas);
@@ -161,6 +162,7 @@ end
                 % [5000, NaN] = start and end after acquisition end/cell in
                 % prophase
                 % [x(2), NaN] = start OK, no end
+                
                 % [NaN, -5000] = start and end before acquisition start/cell in
                 % anaphase/telophase
                 % [NaN, NaN] = start before acquisition start and end after
@@ -439,14 +441,14 @@ end
  % after start of acquisition. CongStart will have NaNs for cells where 
  % congression started before or after the start/end of image acquisition
         end
+
                for j = 1:1:BB
             worm = Germlineoutput(j).gonad;
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-            if numel(fieldnames(Germlineoutput)) > 6
-                 Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
-            end
+%             Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+          
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
             Germlineoutput(j).meas(:,2) = CongStart(boo,1);
@@ -603,7 +605,7 @@ end
                 ,'SpindleLengthStDev','AnaphaseElongation_um_per_s','CongressionDurationBinned','NEBDbinned','CongEndbinned'});
        end
        %%% order fields of the Germlineoutput Structure
-        cd={'gonad','numdivs','arrested','delayed','strongdelayed','notdelayed','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
+        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end

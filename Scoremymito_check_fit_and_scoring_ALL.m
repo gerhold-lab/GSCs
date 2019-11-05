@@ -19,13 +19,22 @@
     'Click on the graph to move to the next cell';
     'To modify your scoring, click a keyboard button, script opens corresponding image file to allow user to compare image to graph';
      },'Welcome to ScoreMymito','continue','cancel');
+ 
+    prompt = {'Enter the # of the celloutput field you would like to start with : '};
+    dlgtitle = 'Input';
+    dims = [1 35];
+    definput = {'1'};
+    answer3 = inputdlg(prompt,dlgtitle,dims,definput);
+    Fcell= str2num(cell2mat(answer3(1,1)));
+    
+    
 
 A = exist('Celloutput');
 if A ~= 1
     error('No Celloutput variable in the work space');
 else
     [~,kk] = size(Celloutput);
-    for j = 1:1:kk
+    for j = Fcell:1:kk
         % Define limits of x-axis
         xstart = min(Celloutput(j).meas(:,1));
         firstframe = xstart;
@@ -334,7 +343,7 @@ else
         for i = 1:1:kk
             
             %determine the frame rate between 2 consecutive time points
-            for ff = 1:1:(length(Celloutput(i).meas)-1)
+            for ff = 1:1:(length(Celloutput(i).meas(:,1))-1)
               if Celloutput(i).meas((ff+1),1) - Celloutput(i).meas(ff,1) == 1
                  Framerate(i,1) = Celloutput(i).meas((ff+1),2) - Celloutput(i).meas(ff,2);
               end
@@ -522,14 +531,15 @@ else
  % after start of acquisition. CongStart will have NaNs for cells where 
  % congression started before or after the start/end of image acquisition
         end
+
                for j = 1:1:BB
             worm = Germlineoutput(j).gonad;
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-            if numel(fieldnames(Germlineoutput)) > 6
-                 Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
-            end
+             Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+             
+             
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
             Germlineoutput(j).meas(:,2) = CongStart(boo,1);
@@ -686,7 +696,7 @@ else
                 ,'SpindleLengthStDev','AnaphaseElongation_um_per_s','CongressionDurationBinned','NEBDbinned','CongEndbinned'});
        end
        %%% order fields of the Germlineoutput Structure
-        cd={'gonad','numdivs','arrested','delayed','strongdelayed','notdelayed','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
+        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end
