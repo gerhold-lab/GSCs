@@ -9,7 +9,7 @@
     prompt = {'Duration of congression considered delayed (95th percentiles of your control set) in seconds : ','Duration of congression considered strongly delayed (99th percentiles of your control set) in seconds :'};
     dlgtitle = 'Input';
     dims = [1 35];
-    definput = {'503.2096','651.9214'};
+    definput = {'545.5824','714.5624'};
     answer = inputdlg(prompt,dlgtitle,dims,definput);
     perc95= str2num(cell2mat(answer(1,1)));
     perc99= str2num(cell2mat(answer(2,1)));
@@ -631,7 +631,14 @@ else
               Germlineoutput(j).NEBDbins(18,1)=Germlineoutput(j).NEBDbins(18,1)+1;    
            end
            end
-             
+           
+           %%% add a field to Germlineoutput
+           % total nummber of Cells starting NEBD during the movie
+           Germlineoutput(j).totalNEBD=sum(Germlineoutput(j).NEBDbins);
+           
+           
+            %%% add a field to Germlineoutput
+           % number of cells in each bin depending on when Congression ends
            for del=1:1:Germlineoutput(j).numdivs
            if Germlineoutput(j).meas(del,11) == 1
               Germlineoutput(j).CongEndbins(1,1)=Germlineoutput(j).CongEndbins(1,1)+1;
@@ -696,10 +703,18 @@ else
                 ,'SpindleLengthStDev','AnaphaseElongation_um_per_s','CongressionDurationBinned','NEBDbinned','CongEndbinned'});
        end
        %%% order fields of the Germlineoutput Structure
-        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
+        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','totalNEBD','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end
-
-        clearvars -except Celloutput Germlineoutput Tiff_fileList DurCong2 CongStart
+         Summary = zeros(6,1);
+    Summary(1,1)= BB;
+    Summary(2,1)= sum(~isnan(DurCong2));
+    Summary(3,1)= nanmean(DurCong2)./60;
+    Summary(4,1)= nanmean(meanSpinLength);
+    Summary(5,1)= nanmean(STdevSpinLength);
+    Summary(6,1)= nanmean(SpinElongationRate);
+    Summary=table(Summary,'RowNames',{'Number of germlines','Number of cells that completed congression','Mean of congression in minutes',' Mean of spindle length',' Mean of Stdev spindle length', 'Mean of SpinElongationRate'});
+    
+        clearvars -except Celloutput Germlineoutput Tiff_fileList Summary
 end
