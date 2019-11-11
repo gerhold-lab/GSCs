@@ -7,7 +7,7 @@ ROIs = ""+dir+"/cells_trackmateROIs/";
 File.makeDirectory(""+dir+"/cells_cropped/"); //Mac
 Tiffs = ""+dir+"/cells_cropped/";
 
-Dialog.create("voxel size in um?");
+//Dialog.create("voxel size in um?");
 Dialog.addNumber("depth:", 0.5);
 Dialog.addNumber("width/height:", 0.1801588);
 Dialog.show();
