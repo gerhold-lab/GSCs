@@ -3,7 +3,7 @@
 //Run this macro first on raw data directly from SD3/Metamorph. This macro opens each nd file, converts the dual camera single tif output into a 2 channel hyperstack 
 //The original metadata for each nd file is also saved in the output folder. The nd file field of view may have been the full camera chip or a cropped 
 //region of the camera chip, in which case, the coordinates of this first cropped region will be in the metadata. This information will be neccessary for 
-//flat field corrections and image registration. This macro also rotates the image by 90 degrees.
+//flat field corrections and image registration. This macro also rotates the image by 90 degrees.
 
 
 dir = getDirectory("Select source directory.");
