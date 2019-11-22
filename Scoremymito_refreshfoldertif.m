@@ -246,31 +246,7 @@ for i = 1:1:length(TrackMate_fileList)
     end
     frametotal = frametotal(1,1:2:end);
     
-     % put data for each cell into output structure array
-    for j = 1:1:length(cellIDs)
-        if i == 1 && kk == 1
-            Celloutput(j).gonad = gonad;
-            Celloutput(j).cell = cellIDs{1,j};
-            Celloutput(j).meas(1:frametotal(1,j),1) = frames(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),2) = time(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),3) = spin_length(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),4:6) = spin_midpnt{1,j};
-            Celloutput(j).meas(1:frametotal(1,j),7:9) = spin_vec{1,j};
-        else
-            Celloutput(j+cc).gonad = gonad;
-            Celloutput(j+cc).cell = cellIDs{1,j};
-            Celloutput(j+cc).meas(1:frametotal(1,j),1) = frames(1:frametotal(1,j),j);
-            Celloutput(j+cc).meas(1:frametotal(1,j),2) = time(1:frametotal(1,j),j);
-            Celloutput(j+cc).meas(1:frametotal(1,j),3) = spin_length(1:frametotal(1,j),j);
-            Celloutput(j+cc).meas(1:frametotal(1,j),4:6) = spin_midpnt{1,j};
-            Celloutput(j+cc).meas(1:frametotal(1,j),7:9) = spin_vec{1,j};
-        end
-    end
-    Germlineoutput(zz).gonad = gonad;
-    Germlineoutput(zz).numdivs = length(cellIDs);
-    Germlineoutput(zz).lastframe = max(max(frames));
-    Germlineoutput(zz).cells = cellIDs;
-        
+         
     % Generate a ImageJ-readable file to create ROIs and crop out all
     % tracked cells
     cells = cell(sum(frametotal),1);
