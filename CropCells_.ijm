@@ -163,6 +163,7 @@ function getROIs(path) {
 				run("Duplicate...", "duplicate title="+title+" channels=2 slices="+top+"-"+bottom+" frames="+Fr+"");
 				joe = getImageID();
 				run("Z Project...", "projection=[Max Intensity]");
+				drawString(Fr,55,15);
 				//gus = getImageID();
 				selectImage(joe);
 				close();

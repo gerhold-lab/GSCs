@@ -10,9 +10,6 @@
 % generate TrackMate .csv file with centrosome coordinates and save in same directory with same file name (i.e. '2018_04_10_L4440_gonad1.csv')
 % end result: folder with 1 tif and 1 csv per gonad, all with the same root name
 
-answer = questdlg({'The next window will ask you to select the folder containing your data';
-  },'Welcome to ScoreMymito','continue','cancel');
-
 %uigetdir Open folder selection dialog box
 folder = uigetdir;
 fileList = getAllFiles(folder);
@@ -249,7 +246,7 @@ for i = 1:1:length(TrackMate_fileList)
     end
     frametotal = frametotal(1,1:2:end);
     
-    % put data for each cell into output structure array
+     % put data for each cell into output structure array
     for j = 1:1:length(cellIDs)
         if i == 1 && kk == 1
             Celloutput(j).gonad = gonad;
@@ -273,7 +270,7 @@ for i = 1:1:length(TrackMate_fileList)
     Germlineoutput(zz).numdivs = length(cellIDs);
     Germlineoutput(zz).lastframe = max(max(frames));
     Germlineoutput(zz).cells = cellIDs;
-    
+        
     % Generate a ImageJ-readable file to create ROIs and crop out all
     % tracked cells
     cells = cell(sum(frametotal),1);
@@ -292,8 +289,6 @@ for i = 1:1:length(TrackMate_fileList)
     end
     cells = cells(~isnan(coords(:,2)),:);
     coords = coords(~isnan(coords(:,2)),:);
-    Germlineoutput(zz).IJcells = cells;
-    Germlineoutput(zz).IJcoords = coords;
     
     %output a tab-delimited text file with spindle midpoint coordinates and
     %cell IDs to open in ImageJ
@@ -315,3 +310,12 @@ for i = 1:1:length(TrackMate_fileList)
     fclose(fileID);
     zz = zz + 1;
 end
+fileList = getAllFiles(folder);
+% Find all the .tif files in 'fileList'
+boo = strfind(fileList,'tif');
+%cellfun Apply function to each cell in cell array
+%TF = isempty(A) returns logical 1 (true) if A is an empty array and logical 0 (false) otherwise.
+foo = find(~cellfun('isempty', boo));
+Tiff_fileList = fileList(foo, 1);
+
+clearvars -except Celloutput Germlineoutput Tiff_fileList Summary choice ennd

@@ -21,7 +21,7 @@ else
     [~,kk] = size(Celloutput);
     
 end 
-    for j = 1:1:kk
+    for j = k2:1:kk
         [row, col] = size(Celloutput(j).meas);
         Fs = Celloutput(j).scoring(1,1);
         Fe = Celloutput(j).scoring(1,2);
@@ -238,6 +238,9 @@ end
     % Germlineoutput.gonad and Germlineoutput.lastframe to determine
     % whether cells with either the start or end of congression missing
     % (i.e. before t0 or after tlast, respectively) are delayed.
+    for j = 1:1:BBB
+    Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+    end
     B = exist('Germlineoutput');
     if B ~= 1
         error('No Germlineoutput variable in the work space');
@@ -447,7 +450,7 @@ end
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-             Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+%             Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
           
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw

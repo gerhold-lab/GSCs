@@ -20,13 +20,15 @@
     'To modify your scoring, click a keyboard button, script opens corresponding image file to allow user to compare image to graph';
      },'Welcome to ScoreMymito','continue','cancel');
  
-    prompt = {'Enter the # of the celloutput field you would like to start with : '};
+    prompt = {'Enter the # of the celloutput you would like to start with : '};
     dlgtitle = 'Input';
     dims = [1 35];
+    
     definput = {'1'};
     answer3 = inputdlg(prompt,dlgtitle,dims,definput);
     Fcell= str2num(cell2mat(answer3(1,1)));
-    
+   
+  
     
 
 A = exist('Celloutput');
@@ -35,6 +37,8 @@ if A ~= 1
 else
     [~,kk] = size(Celloutput);
     for j = Fcell:1:kk
+        
+    
         % Define limits of x-axis
         xstart = min(Celloutput(j).meas(:,1));
         firstframe = xstart;
@@ -74,6 +78,11 @@ else
         line([Fre Fre],yL,'Color','k');
         line([FrNEBD FrNEBD],yL,'Color','b');
         line([0 0],yL,'Color','g','LineWidth',2);
+        annotation(figure1,'textbox',...
+        [0.783854166666667 0.923499549908993 0.187607145371712 0.0476415102886704],...
+        'String',['Celloutput #' num2str(j) '/' num2str(kk)],...
+        'FontSize',18,...
+        'FitBoxToText','off');
         % Add linear curve fit (using frames not seconds)
         if ~isnan(Frs) && ~isnan(Fre) && Fre ~= -5000 && Frs ~= 5000
             % frames
@@ -99,6 +108,8 @@ else
             plot(Ar);
         end
         %Show most recent graph window
+        xlabel('Frames')
+        ylabel('Mitotic spindle length')
         shg;
         % If fits are an accurate representation of data, click a mouse button
         % Otherwise, press any key and you can modify your scoring
@@ -143,8 +154,6 @@ else
             %figure(Hh.Parent) % Brings implay window to front          
             CongE = str2num(cell2mat(answer(2,1)));
             close(Hh);
-            CongS = CongS + firstframe - 1;
-            CongE = CongE + firstframe - 1;
             figure(figure1)
             if ~isnan(CongS)
                 line([CongS CongS],yL,'Color','b');
@@ -552,8 +561,8 @@ else
             Germlineoutput(j).meas(:,9) = DurCong(boo,1);%binned
             Germlineoutput(j).meas(:,10) = NEBDbin(boo,1);%binned
             Germlineoutput(j).meas(:,11) = CongEndbin(boo,1);%binned
-            
-            
+            Germlineoutput(j).DurCongMean = nanmean(DurCong2(boo,1))./60;
+           
             arrested=0;
             delayed=0;
             strongdelayed=0;
@@ -703,7 +712,7 @@ else
                 ,'SpindleLengthStDev','AnaphaseElongation_um_per_s','CongressionDurationBinned','NEBDbinned','CongEndbinned'});
        end
        %%% order fields of the Germlineoutput Structure
-        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','totalNEBD','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
+        cd={'gonad','numdivs','arrested','strongdelayed','delayed','notdelayed','DurCongMean','totalNEBD','NEBDbins','CongEndbins','meas','mitocounts','lastframe','cells','IJcells','IJcoords','Framerate'};
         Germlineoutput = orderfields(Germlineoutput,cd);
 
     end
@@ -716,5 +725,5 @@ else
     Summary(6,1)= nanmean(SpinElongationRate);
     Summary=table(Summary,'RowNames',{'Number of germlines','Number of cells that completed congression','Mean of congression in minutes',' Mean of spindle length',' Mean of Stdev spindle length', 'Mean of SpinElongationRate'});
     
-        clearvars -except Celloutput Germlineoutput Tiff_fileList Summary
+        clearvars -except Celloutput Germlineoutput Tiff_fileList Summary choice ennd
 end

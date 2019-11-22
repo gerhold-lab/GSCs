@@ -27,12 +27,13 @@ A = exist('Celloutput');
             if A ~= 1
     error('No Celloutput variable in the work space');
 else
+    k2=kk;
     [~,kk] = size(Celloutput);
-    for j = 1:1:kk
-        
+                 
+    for j = k2:1:kk
         Celloutput(j).scoring = NaN(1,3);
     end
-    for j = 1:1:kk
+    for j = k2:1:kk
         % Define limits of x-axis
         xstart = min(Celloutput(j).meas(:,1));
         firstframe = xstart;
@@ -213,4 +214,3 @@ else
     end
 end
 
- clearvars -except Celloutput Germlineoutput Tiff_fileList choice ennd

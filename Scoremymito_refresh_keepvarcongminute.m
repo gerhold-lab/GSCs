@@ -447,7 +447,8 @@ end
             boo = strcmp(Gonads, worm);
            
             %%% reconvert the table to an array to permit refreshing
-             Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+            Germlineoutput(j).meas=table2array(Germlineoutput(j).meas);
+            
           
             Germlineoutput(j).Framerate = max(Framerate(boo,1));
             Germlineoutput(j).meas(:,1) = NEBD(boo,1);%raw
@@ -626,4 +627,8 @@ end
     Summary(6,1)= nanmean(SpinElongationRate);
     Summary=table(Summary,'RowNames',{'Number of germlines','Number of cells that completed congression','Mean of congression in minutes',' Mean of spindle length',' Mean of Stdev spindle length', 'Mean of SpinElongationRate'});
     end
-clearvars -except Celloutput Germlineoutput Tiff_fileList Summary choice ennd
+    CongressionStart = CongStart;
+    DurCongression = DurCong2;    
+    percentile95=prctile(DurCong2,95);
+    percentile99=prctile(DurCong2,99);
+clearvars -except Celloutput Germlineoutput Tiff_fileList Summary CongressionStart DurCongression percentile95 percentile99 choice ennd

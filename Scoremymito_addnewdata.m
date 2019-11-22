@@ -10,9 +10,8 @@
 % generate TrackMate .csv file with centrosome coordinates and save in same directory with same file name (i.e. '2018_04_10_L4440_gonad1.csv')
 % end result: folder with 1 tif and 1 csv per gonad, all with the same root name
 
-answer = questdlg({'The next window will ask you to select the folder containing your data';
+answer = questdlg({'The next window will ask you to select the folder containing your data (includind new one) ';
   },'Welcome to ScoreMymito','continue','cancel');
-
 %uigetdir Open folder selection dialog box
 folder = uigetdir;
 fileList = getAllFiles(folder);
@@ -23,6 +22,7 @@ boo = strfind(fileList,'csv');
 %cellfun Apply function to each cell in cell array
 %TF = isempty(A) returns logical 1 (true) if A is an empty array and logical 0 (false) otherwise.
 foo = find(~cellfun('isempty', boo));
+
 TrackMate_fileList = fileList(foo, 1);
 
 % Use 'TrackMate_fileList' to loop through all TrackMate files, import
@@ -36,22 +36,13 @@ TrackMate_fileList = fileList(foo, 1);
     %       col 4-6 = x, y, z coords of spindle midpoint
     %       col 7-9 = spindle vector
 
-A = exist('Celloutput');
-if A ~= 1
-    Celloutput = struct;
-    kk = 1;
-else
     [~,kk] = size(Celloutput);
-end
-
-B = exist('Germlineoutput');
-if B ~= 1
-    Germlineoutput = struct;
-    zz = 1;
-else
+    
     [~,zz] = size(Germlineoutput);
-end
- 
+    BBB=zz;
+    zz=zz+1;
+    
+    
 for i = 1:1:length(TrackMate_fileList)
     % when i = 1, size(output) = [1,1]
     % returns the number of rows and columns
@@ -63,8 +54,10 @@ for i = 1:1:length(TrackMate_fileList)
     nn = strfind(gnd2, '.');
     % 'gonad' should = gonad name (e.g. '2018_04_10_L4440_gonad1')
     % used to name csv/xlsx file and corresponding folder of stl files
-    gonad = gnd2(1, 1:(nn(1,length(nn))-1)); 
-    
+    gonad = gnd2(1, 1:(nn(1,length(nn))-1));
+    gonad1 = {Germlineoutput.gonad}.';
+    if ~any(strcmp(gonad1,gonad))
+        
     % On Windows OS xlsread should read the CSV, but on Mac OS xlsread can only
     % recognize XLS, XLSX, XLSM, XLTX, and XLTM.
     [num,txt,raw] = xlsread(TrackMate);
@@ -249,17 +242,8 @@ for i = 1:1:length(TrackMate_fileList)
     end
     frametotal = frametotal(1,1:2:end);
     
-    % put data for each cell into output structure array
+     % put data for each cell into output structure array
     for j = 1:1:length(cellIDs)
-        if i == 1 && kk == 1
-            Celloutput(j).gonad = gonad;
-            Celloutput(j).cell = cellIDs{1,j};
-            Celloutput(j).meas(1:frametotal(1,j),1) = frames(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),2) = time(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),3) = spin_length(1:frametotal(1,j),j);
-            Celloutput(j).meas(1:frametotal(1,j),4:6) = spin_midpnt{1,j};
-            Celloutput(j).meas(1:frametotal(1,j),7:9) = spin_vec{1,j};
-        else
             Celloutput(j+cc).gonad = gonad;
             Celloutput(j+cc).cell = cellIDs{1,j};
             Celloutput(j+cc).meas(1:frametotal(1,j),1) = frames(1:frametotal(1,j),j);
@@ -267,8 +251,8 @@ for i = 1:1:length(TrackMate_fileList)
             Celloutput(j+cc).meas(1:frametotal(1,j),3) = spin_length(1:frametotal(1,j),j);
             Celloutput(j+cc).meas(1:frametotal(1,j),4:6) = spin_midpnt{1,j};
             Celloutput(j+cc).meas(1:frametotal(1,j),7:9) = spin_vec{1,j};
-        end
     end
+    
     Germlineoutput(zz).gonad = gonad;
     Germlineoutput(zz).numdivs = length(cellIDs);
     Germlineoutput(zz).lastframe = max(max(frames));
@@ -292,8 +276,6 @@ for i = 1:1:length(TrackMate_fileList)
     end
     cells = cells(~isnan(coords(:,2)),:);
     coords = coords(~isnan(coords(:,2)),:);
-    Germlineoutput(zz).IJcells = cells;
-    Germlineoutput(zz).IJcoords = coords;
     
     %output a tab-delimited text file with spindle midpoint coordinates and
     %cell IDs to open in ImageJ
@@ -314,4 +296,7 @@ for i = 1:1:length(TrackMate_fileList)
     fprintf(fileID,'%6s\n',cellIDs{:});
     fclose(fileID);
     zz = zz + 1;
+    end
 end
+
+
