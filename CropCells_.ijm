@@ -7,12 +7,6 @@ ROIs = ""+dir+"/cells_trackmateROIs/";
 File.makeDirectory(""+dir+"/cells_cropped/"); //Mac
 Tiffs = ""+dir+"/cells_cropped/";
 
-//Dialog.create("voxel size in um?");
-Dialog.addNumber("depth:", 0.5);
-Dialog.addNumber("width/height:", 0.1801588);
-Dialog.show();
-z = Dialog.getNumber();
-xy = Dialog.getNumber();
 
 function GetFiles(dir) {
 	list = getFileList(dir); 
@@ -37,12 +31,16 @@ function getROIs(path) {
 	corresp = replace(path, "_coords.txt", ".tif");
 	print(corresp);
 	open(corresp);
+	getVoxelSize(xy, Pxheight, z, unit);
+	if (unit == "pixel") {
+		exit("Input image is not calibrated");
+	}
 	boo = getImageID();
 	cellindx = replace(path, "_coords.txt", "_cellIDs.txt");
 	string = File.openAsString(cellindx);
 	//print(string);
 	cells = split(string,"\n");
-	//Array.show(cells);
+	Array.show(cells);
 	foo = getTitle();
 	name = replace(foo, ".tif", "");
 	//File.makeDirectory(""+ROIs+"\\"+name+"\\"); //PC
@@ -52,20 +50,26 @@ function getROIs(path) {
 	out1 = ""+ROIs+"/"+name+"/";
 	out2 = ""+Tiffs+"/"+name+"/";
 	
-	//make array out of "Cell" column from Results table
+	//make array out of "Cell" column from Results table (i.e the Matlab coords.txt output)
 	cellIDs = newArray(nResults);
 	for (i=0; i<nResults; i++) {
 		cellIDs[i] = getResultString("Cell",i);
 	}
-	//Array.show(cellIDs);
+	Array.show(cellIDs);
 
 	for (j=0; j<cells.length; j++) {
-		cell = cells[j];
-		//counts the number of times cell appears in array cellIDs (i.e number of frames where cell was tracked); occurence++ advances the value of occurence 
-		//by increments of 1
+		//loop through the cells array, i.e. 1 iteration per tracked cell
+		//Matlab output has a space before the "C" in Cell IDs with number < 10 - this screws up file names --> use one variable
+		//for creating the index (moo) and one for creating the file name (cell) [possibly this was fixed in Matlab, but doesn't hurt to leave it]
+		moo = cells[j];
+		//print(moo);
+		cell = replace(moo, " ", "");
+		//print(cell);
+		//counts the number of times cell appears in array cellIDs (i.e number of frames where cell was tracked)
+		//occurence++ advances the value of occurence by increments of 1
 		occurence = 0;
 		for (i=0; i<lengthOf(cellIDs); i++) {
-			if(cellIDs[i] == cell) {
+			if(cellIDs[i] == moo) {
 				occurence++;
 			}
 		}
@@ -78,7 +82,7 @@ function getROIs(path) {
 			//rownum array ends up as index for where (row number) in Matlab output each cell appears - i.e. if Cell10 coordinates are found
 			//from row 1-73 rownums = [1, 2, 3... 73] 
 			for (i=0; i<lengthOf(cellIDs); i++) {
-				if(cellIDs[i] == cell) {
+				if(cellIDs[i] == moo) {
 					rownums[occurence] = i;
 					occurence++;
 				}
@@ -138,20 +142,27 @@ function getROIs(path) {
 				run("Duplicate...", "duplicate title="+title+" channels=2 slices="+top+"-"+bottom+" frames="+Fr+"");
 				joe = getImageID();
 				run("Z Project...", "projection=[Max Intensity]");
+				drawString(Fr, 55, 15, "white");
 				//gus = getImageID();
 				selectImage(joe);
 				close();
 			}
-			selectImage(boo);
-			close();
-			run("Concatenate...", "all_open title=[Concatenated Stacks]");
+			//This should assemble cropped projected images into a stack. Will only work if images are not stacks themselves (i.e.
+			//have only 1 channel. It should assemble the stack with the images ordered according to the order in which 
+			//they were generated
+			run("Images to Stack", "name=[Stack] title=MAX use");
+			goo = ""+out2+""+name+"_"+cell+".tif";
+			print(goo);
 			saveAs("Tiff", ""+out2+""+name+"_"+cell+".tif");
 			close();
-			run("Close All");
+			//run("Clear Results");
+			roiManager("Reset");
 		}
-		open(corresp);
 	}
+	selectImage(boo);
+	close();
 }
+
 
 setBatchMode(true);
 GetFiles(dir);
