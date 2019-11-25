@@ -71,7 +71,6 @@ function splitmerge(modpath) {
         	bob = substring(bob, indexOf(bob, "Stage"), lastIndexOf(bob, " "));
         	stagepos = substring(bob, 5, lengthOf(bob));
        		print(stagepos);
-        	joe = getImageID();
         	Stack.getDimensions(boo, foo, channels, slices, frames);
         	//boo = getWidth();
         	//foo = getHeight();
@@ -101,7 +100,7 @@ function splitmerge(modpath) {
 		makeRectangle(0, 0, boo/2, foo);
 		run("Duplicate...", "duplicate");
 		rename("mCherry");
-		selectImage(imglist[j]);
+		selectImage(joe);
 		makeRectangle(boo/2, 0, boo/2, foo);
 		run("Crop");
 		rename("GFP");
