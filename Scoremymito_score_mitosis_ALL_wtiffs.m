@@ -28,7 +28,7 @@ Tiff_fileList = fileList(foo, 1);
 
 
 A = exist('Celloutput');
-            if A ~= 1
+if A ~= 1
     error('No Celloutput variable in the work space');
 else
     [~,kk] = size(Celloutput);
