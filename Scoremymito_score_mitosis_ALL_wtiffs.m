@@ -110,22 +110,26 @@ else
             % User inputs frame value corresponding to congression start
             % and stop, as assessed from image file. If not possible to
             % score --> enter NaN;
-            prompt = {'Enter frame corresponding to congression start :','Enter frame corresponding to congression end :'};
+             prompt = {'Enter frame corresponding to NEBD :','Enter frame corresponding to congression start :','Enter frame corresponding to congression end :'};
             dlgtitle = 'Input';
             dims = [1 35];
-            definput = {'NaN','NaN'};
+            definput = {'NaN','NaN','NaN'};
             opts.WindowStyle = 'normal';
             answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
             figure(Hh.Parent) % Brings implay window to front
-            CongS = str2num(cell2mat(answer(1,1)));             
-            CongE = str2num(cell2mat(answer(2,1)));
+            NEBD = str2num(cell2mat(answer(1,1)));
+            CongS = str2num(cell2mat(answer(2,1)));             
+            CongE = str2num(cell2mat(answer(3,1)));
             close(Hh);
             figure(figure1)
+            if ~isnan(NEBD)
+                line([NEBD NEBD],yL,'Color','g');
+            end
             if ~isnan(CongS)
-                line([CongS CongS],yL,'Color','b');
+                line([CongS CongS],yL,'Color','r');
             end
             if ~isnan(CongE)
-                line([CongE CongE],yL,'Color','b');
+                line([CongE CongE],yL,'Color','m');
             end
         end
 

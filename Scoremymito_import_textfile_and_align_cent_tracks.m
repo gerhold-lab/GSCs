@@ -9,21 +9,22 @@
 % This scropt also generates 2 additional txt files with the coordinates to
 % feed into ImageJ, which allow us to crop out each individual cell based
 % on the position of it's spindle midpoint.
-% Because this script generates extra txt files in the starting directory,
-% if you must re-run this script you will need to remove these txt files
-% otherwise it will likely crash (i.e. when you run this, the ONLY txt
-% files should be your TrackMate output)
 
 %uigetdir Open folder selection dialog box
 folder = uigetdir;
 fileList = getAllFiles(folder);
 
 % Find all the .txt files in 'fileList'
+% Because this script generates extra txt files in the starting directory,
+% if you must re-run this script we will want to ignore these txt files
+% which we do by removing all text files with the coords and cellIDs names
 boo = strfind(fileList,'txt');
+coo = strfind(fileList,'coords');
+goo = strfind(fileList,'cellIDs');
 
 %cellfun Apply function to each cell in cell array
 %TF = isempty(A) returns logical 1 (true) if A is an empty array and logical 0 (false) otherwise.
-foo = find(~cellfun('isempty', boo));
+foo = find(~cellfun('isempty', boo) & cellfun('isempty', coo) & cellfun('isempty', goo));
 TrackMate_fileList = fileList(foo, 1);
 
 % Use 'TrackMate_fileList' to loop through all TrackMate files, import
@@ -147,10 +148,9 @@ for i = 1:1:length(TrackMate_fileList)
     
     % Add a step to align the tracks for pairs of centrosomes by frame -
     % this will compare the numeric arrays exported from the 'M' output
-    % for pairs of centrosomes, take the longer one (i.e. the
-    % one with more frames, or the first one (CentXa) if they are the same
-    % length) and use the frame values in column 5 to align its pair. This
-    % will account for skipped frames in tracking
+    % for pairs of centrosomes, create a frame index based on the min and max frame number for 
+    % both centrosomes and align the measured values for each centrosome to this index
+    % This will account for skipped frames in tracking.
     
     for j = 1:2:length(cent_cords)
         aa = cent_cords{1,j};
@@ -159,45 +159,43 @@ for i = 1:1:length(TrackMate_fileList)
         CentB = cent_cords{2, j+1};
         [mA, ~] = size(CentA);
         [mB, ~] = size(CentB);
-        if mA ~= mB
-            refCent = max(mA, mB);
-        else
-            refCent = mA;
-        end
-        if refCent == mA
-            boo = CentA;
-            id = aa;
-            foo = CentB;
-        else
-            boo = CentB;
-            id = bb;
-            foo = CentA;
-        end
-        [numframes, ~] = size(boo);
-        moo = unique(boo(:,5));
-        if length(moo) ~= numframes
-            Ncount = histc(boo(:,5), moo);
-            loo = moo(Ncount ~= 1);
-            frameerrors = num2str(loo);
-            error(['For ', id, ' in ', gonad, ' there is more than 1 spot per a frame at ', frameerrors '. Check TrackMate file.'])
-        else
-            foo_aligned = NaN(size(boo));
-            for k = 1:1:numframes
-                if sum(foo(:,5)==boo(k,5)) == 1;
-                    foo_aligned(k,:) = foo(foo(:,5)==boo(k,5),:);
+        boo = min([nanmin(CentB(:,5)), nanmin(CentA(:,5))]);
+        foo = max([nanmax(CentB(:,5)), nanmax(CentA(:,5))]);
+        FrIndx = [boo:1:foo]';
+        % unique returns all the unique frame values for CentA/B in sorted
+        % order. Use to make sure there are no frames with > 1 spot
+        moo = unique(CentA(:,5));
+        Ncount = histc(CentA(:,5), moo);
+        loo = moo(Ncount ~= 1);
+        mooB = unique(CentB(:,5));
+        NcountB = histc(CentB(:,5), mooB);
+        looB = mooB(NcountB ~= 1);
+        if isempty(loo) && isempty(looB)
+            boo = NaN(length(FrIndx),5);
+            boo(:,5) = FrIndx;
+            for k = 1:1:length(FrIndx)
+                if sum(CentA(:,5)==boo(k,5)) == 1;
+                    boo(k,1:4) = CentA(CentA(:,5)==boo(k,5),1:4);
                 end
             end
-            if refCent == mA
-                cent_cords{3,j} = boo;
-                cent_cords{3,j+1} = foo_aligned;
-            else
-                cent_cords{3,j} = foo_aligned;
-                cent_cords{3,j+1} = boo;
+            cent_cords{3,j} = boo;
+            boo = NaN(length(FrIndx),5);
+            boo(:,5) = FrIndx;
+            for k = 1:1:length(FrIndx)
+                if sum(CentB(:,5)==boo(k,5)) == 1;
+                    boo(k,1:4) = CentB(CentB(:,5)==boo(k,5),1:4);
+                end
             end
+            cent_cords{3,j+1} = boo;
+        elseif ~isempty(loo)
+            frameerrors = num2str(loo);
+            error(['For ', aa, ' in ', gonad, ' there is more than 1 spot per a frame at ', frameerrors '. Check TrackMate file.'])
+        elseif ~isempty(loo)
+            frameerrors = num2str(loo);
+            error(['For ', bb, ' in ', gonad, ' there is more than 1 spot per a frame at ', frameerrors '. Check TrackMate file.'])
         end
     end
-        
-    
+ 
     % Pull out frame and time values for all cells in gonad being processed and adjust frames by 1
     frames = NaN(max(numbcents),length(centIDs_unique));
     time = NaN(max(numbcents),length(centIDs_unique));
