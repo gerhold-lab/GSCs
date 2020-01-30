@@ -1,0 +1,585 @@
+% folder of .czi files
+% open in Fiji and crop each gonad in xyzt to smallest image possible
+% make note of which gonads come from which .czi
+% save each gonad as .tif
+% group tifs into folders based on whatever unifying theme makes sense (i.e. L4440, control, ani-2?) and which you want to compile data for into a single analysis
+% name each tif with acquisition date, condition/genotype and ?gonadX? e.g. ?2018_04_10_L4440_gonad1.tif?
+% generate TrackMate .csv file with centrosome coordinates and save in same directory with same file name but with _tracks at the end (i.e. ?2018_04_10_L4440_gonad1_tracks.csv?)
+% run Imaris software to segment/3D render rachis and export .wrl file for each gonad
+% save all wrl files for  gonads in the same folder as the tracks files (i.e. ?2018_04_10_L4440_gonad1?)
+% for each wrl file, run the python scripts vrml2csv that generate the .csv files with 
+% end result: folder with 1 tif, 1 _tracks.csv and csv files from python script
+
+folder = uigetdir;
+fileList = getAllFiles(folder);
+
+% Find all the .csv files (in the case of Mac OS, all the .xlsx files) in
+% 'fileList'
+%%% booboo = strtok(str,'!');
+boo = strfind(fileList,'tracks.csv');
+gigi = strfind(fileList,'_coord');
+gege = strfind(fileList,'_faceNormal');
+gaga = strfind(fileList,'_normal');
+gugu = strfind(fileList,'_index');
+
+foo = find(~cellfun('isempty', boo));
+giogio =  find(~cellfun('isempty', gigi));
+geogeo =  find(~cellfun('isempty', gege));
+gaogao =  find(~cellfun('isempty', gaga));
+guoguo =  find(~cellfun('isempty', gugu));
+
+TrackMate_fileList = fileList(foo, 1);
+CSV_fileList_coord = fileList(giogio, 1);
+CSV_fileList_faceNormal = fileList(geogeo, 1);
+CSV_fileList_normal = fileList(gaogao, 1);
+CSV_fileList_index = fileList(guoguo, 1);
+
+% Use 'TrackMate_fileList' to loop through all TrackMate files, import
+% centrosome coordinates, import rachis coordinate and calculate spindle
+% legnth and angle to the nearest rachis surface. Final output will be a
+% structure array organized as follows: output(1,x).gonad = gonad name,
+% output(1,x).cell = cell number, output(1,x).meas = numeric array organized as follows:
+    %       col 1 = frames (corrected such that 0 = 1)
+    %       col 2 = time in seconds
+    %       col 3 = spindle length
+    %       col 4-6 = x, y, z coords of spindle midpoint
+    %       col 7-9 = spindle vector
+    %       col 10 = angle to rachis
+    %       col 11 = surface area of rachis used in measurement
+    %       col 12 = number of rachis surface faces used in rachis
+    %       col 13 = average distance b/w face centroids and spindle
+    %       midpoint
+    %       col 14-16 = summed rachis vector used in spindle angle calculation
+    %       col 17 = rayon of the sphere
+    %       col 18-20 = Distances from DT to Spindle midpoint, cent A and
+    %       Cent B
+    %       col 21-23 = x, y, z  DT cords
+    %       col 24-26 = centa cords
+    %       col 27-29 = centb cords
+
+output = struct;
+
+for i = 1:1:length(TrackMate_fileList);
+    % when i = 1, size(output) = [1,1]
+    [rr, cc] = size(output);
+    TrackMate = TrackMate_fileList{i,1};
+    mm = strfind(TrackMate, '\'); % change to '\' for Windows OS
+    ll = strfind(TrackMate, '_tracks'); % change to '\' for Windows OS
+    gonad = TrackMate(1, (mm(1,length(mm))+1):ll-1);
+    % 'gonad' should = gonad name (e.g. '2018_04_10_L4440_gonad1')
+    % used to name csv/xlsx file and corresponding folder of stl files
+    
+    boo = strfind(fileList, [gonad, '_']); % change to '\' for Windows OS
+    foo = find(~cellfun('isempty', boo));
+    sp_fileList = fileList(foo, 1);
+    
+  
+    gigi = strfind(sp_fileList,'_coord');
+    gege = strfind(sp_fileList,'_faceNormal');
+    gaga = strfind(sp_fileList,'_normal');
+    gugu = strfind(sp_fileList,'_index');
+
+    
+    giogio =  find(~cellfun('isempty', gigi));
+    geogeo =  find(~cellfun('isempty', gege));
+    gaogao =  find(~cellfun('isempty', gaga));
+    guoguo =  find(~cellfun('isempty', gugu));
+
+    
+    CSV_fileList_coord = sp_fileList(giogio, 1);
+    CSV_fileList_faceNormal = sp_fileList(geogeo, 1);
+    CSV_fileList_normal = sp_fileList(gaogao, 1);
+    CSV_fileList_index = sp_fileList(guoguo, 1);
+    
+    
+    
+    
+    % 'stl_fileList' should be file list for all stl files corresponding to
+    % 'gonad'. Further refine to exclude any files without the .stl
+    % extension
+    
+    giigii = strfind(CSV_fileList_coord,gonad);
+    giiogiio =  find(~cellfun('isempty', giigii));
+    wrl_fileList_coords = CSV_fileList_coord(giiogiio, 1);
+    
+    giagia = strfind(CSV_fileList_index,gonad);
+    giaogiao =  find(~cellfun('isempty', giagia));
+    wrl_fileList_index = CSV_fileList_index(giaogiao, 1);
+    
+    giegie = strfind(CSV_fileList_normal,gonad);
+    gieogieo =  find(~cellfun('isempty', giegie));
+    wrl_fileList_normal = CSV_fileList_normal(gieogieo, 1);
+    
+    giugiu = strfind(CSV_fileList_faceNormal,gonad);
+    giuogiuo =  find(~cellfun('isempty', giugiu));
+    wrl_fileList_faceNormal = CSV_fileList_faceNormal(giuogiuo, 1);
+    
+    % On Windows OS xlsread should read the CSV, but on Mac OS xlsread can only
+    % recognize XLS, XLSX, XLSM, XLTX, and XLTM.
+    [num,txt,raw] = xlsread(TrackMate);
+    
+    % Pull out the centrosome IDs (i.e. Label) from TrackMate output = SpotIDs.
+    spotIDs = txt(2:end,1);
+    
+    % boo = cell array of same dimensions as SpotIDs, where each cell is 1 if the
+    % SpotID string starts with 'Cent' or empty if SpotID string does not. This
+    % step is necessary to exclude any spots that were not part of a track, but
+    % not deleted (will be called 'IDxxxx'). Will also exclude spots for which
+    % the ID/label was not changed to 'Cent_xx'.
+    booo = strfind(spotIDs,'Cent');
+
+    % foo = numeric array with row indices for all rows in spotIDs which have a
+    % properly labelled centrosome (i.e. 'Cent_xx')
+    fooo = find(~cellfun('isempty', booo));
+
+    % centIDs = cell array with all of the proper centrosome IDs/labels
+    centIDs = spotIDs(fooo, 1);
+    
+    % centIDs_unique = cell array with each unique centrosome ID/label, sorted
+    % length(centIDs_unique) == 2 x number of cells analyzed
+    centIDs_unique = unique(centIDs);
+    
+    
+    
+    % gluglu = numeric array with row indices for all rows in DT which have a
+    % properly labelled DT(i.e. 'DT')
+    % gluglu = find(~cellfun('isempty', poo));
+    
+    
+    
+    % centIDs_unique = cell array with each unique centrosome ID/label, sorted
+    % length(centIDs_unique) == 2 x number of cells analyzed
+    % DT_unique = unique(DTs);
+    
+    
+    
+    if mod(length(centIDs_unique),2) ~= 0
+        error(['Number of centrosomes is not even for ', gonad, '. Check TrackMate file.'])
+    end
+   
+
+    % centIdx = cell array with each cell containing a numeric array that
+    % contains the row indices in SpotIDs for each centrosome (i.e.
+    % centIdx{1,1} = row indices for Cent_1a). numbcents = numeric array with
+    % the number of times that each centrosome appears in SpotIDs
+    centIdx = cell(1,length(centIDs_unique));
+    numbcents = zeros(1,length(centIDs_unique));
+    for j = 1:1:length(centIDs_unique)
+        sam = centIDs_unique{j,1};
+        bob = strfind(spotIDs, sam);
+        centIdx{1,j} = find(~cellfun('isempty', bob));
+        numbcents(1,j) = length(centIdx{1,j});
+    end
+    
+    
+
+    % Because centIDs_unique is sorted, the centrosomes should be arranged in
+    % pairs in both centIdx and numbcents (i.e. numbcents(1,1) and
+    % numbcents(1,2) should be for Cent_1a and Cent_1b, respectively). If no
+    % errors were made during tracking, numbcents(1,1) == numbcents(1,2).
+    jon = zeros(1,length(centIDs_unique));
+    for j = 1:2:length(centIDs_unique)
+        jon(1,j) = isequal(numbcents(1,j),numbcents(1,j+1));
+    end
+    jon = jon(1,1:2:end);
+    if isempty(find(~jon)) == 0;
+        ab = centIDs_unique{find(~jon)*2,1};
+        aa = centIDs_unique{(find(~jon)*2)-1,1};
+        error(['Number of spots does not match for ', aa, ' and ', ab, ' in ', gonad, '. Check TrackMate file.'])
+    end
+
+    % cent_cords = cell array where row 1 contains the centrosome ID/label and
+    % row 2 contains a matrix for each centrosome with the x, y, z and t
+    % coordinates (columns 6, 7, 8 and 10 from TrackMate output). Values are
+    % pulled from the 'num' output of xlsread.
+    cent_cords = centIDs_unique';
+    for j = 1:1:length(centIDs_unique);
+        indx = centIdx{1,j};
+        gg = num(indx,[4:8]);
+        % add sort step to make sure that all centrosomes are ordered by
+        % frame
+        [~,hh] = sort(gg(:,5));
+        cent_cords{2,j} = gg(hh,:);
+    end
+    
+ 
+    % Pull out frame and time values for all cells in gonad being processed and adjust frames by 1
+    frames = zeros(max(numbcents),length(centIDs_unique));
+    time = NaN(max(numbcents),length(centIDs_unique));
+    for j = 1:2:length(centIDs_unique);
+        aa = cent_cords{2,j}(:,5);
+        frames(1:length(aa),j) = aa+1;
+        time(1:length(cent_cords{2,j}(:,4)),j) = cent_cords{2,j}(:,4);
+    end
+    
+
+    frames = frames(:,1:2:end);
+    frames(~frames)=NaN;
+    time = time(:,1:2:end);
+    
+    % Calculate the spindle length for each pair of centrosomes over time.
+    % Script will crash at this point if not all centrosome pairs have the same
+    % number of spots.
+    spin_length = zeros(max(numbcents),length(centIDs_unique));
+    for j = 1:2:length(centIDs_unique)
+        aa = cent_cords{2,j}(:,1:3);
+        ab = cent_cords{2,j+1}(:,1:3);
+        spin_length(1:length(aa),j) = sqrt(sum((ab-aa).*(ab-aa),2));
+    end
+    spin_length = spin_length(:,1:2:end);
+    spin_length(~spin_length)=NaN;
+    
+    % Calculate the spindle midpoint for and vector between each pair of centrosomes over time.
+    % Script will crash at this point if not all centrosome pairs have the same
+    % number of spots.
+    spin_midpnt = cell(1,length(centIDs_unique));
+    spin_vec = cell(1,length(centIDs_unique));
+    centa_cords = cell(1,length(centIDs_unique));
+    centb_cords = cell(1,length(centIDs_unique)); 
+    
+    
+    for j = 1:2:length(centIDs_unique)
+        aa = cent_cords{2,j}(:,1:3);
+        ab = cent_cords{2,j+1}(:,1:3);
+        
+        centa_cords{1,j} = cent_cords{2,j}(:,1:3);
+        centb_cords{1,j} = cent_cords{2,j+1}(:,1:3);
+        
+        spin_midpnt{1,j} = (ab+aa)./2;
+        spin_vec{1,j} = ab-aa;
+        
+    end
+    spin_midpnt = spin_midpnt(:,1:2:end);
+    spin_vec = spin_vec(:,1:2:end);
+    centa_cords = centa_cords(:,1:2:end);
+    centb_cords = centb_cords(:,1:2:end);
+   
+    
+%     % Calculate the distance from the DT for each spindle midpoint over time.
+%     
+%     numberframecell = numbcents(1,1:2:end);
+%     
+%     dist_DT_midpnt = NaN(max(numbcents),(length(centIDs_unique)/2));
+%     
+%     for j = 1:1:length(spin_midpnt)
+% 
+%         SM = spin_midpnt{1,j}(:,1:3);
+%         
+% 
+%         
+%     end
+%     
+%     
+%     
+%     % Calculate the distance from the DT for each centrosomes over time.
+%     
+%    
+%     
+%     dist_DT_cents = NaN((max(numbcents)),(length(centIDs_unique)));
+%     
+%     for j = 1:1:length(centIDs_unique);
+% 
+%         CC = cent_cords{2,j}(:,1:3);
+%         
+% 
+%     end
+   
+    
+    
+    % make cell array with cell IDs for gonad being processed
+    cellIDs = cell(1,length(centIDs_unique));
+    for j = 1:2:length(centIDs_unique)
+        cellID = cent_cords{1,j};
+        cellID = cellID(1:length(cellID)-1);
+        cellID = strrep(cellID, 'Cent', 'Cell');
+        cellIDs{1,j} = cellID;
+    end
+    cellIDs = cellIDs(1,1:2:end);
+    
+    % put data for each cell into output structure array
+    for j = 1:1:length(cellIDs)
+        if i == 1
+            output(j).gonad = gonad;
+            output(j).cell = cellIDs{1,j};
+            output(j).meas(1:length(frames(~isnan(frames(:,j)),j)),1) = frames(~isnan(frames(:,j)),j);
+            output(j).meas(1:length(time(~isnan(time(:,j)),j)),2) = time(~isnan(time(:,j)),j);
+            output(j).meas(1:length(spin_length(~isnan(spin_length(:,j)),j)),3) = spin_length(~isnan(spin_length(:,j)),j);
+            output(j).meas(1:length(spin_midpnt{1,j}(:,1)),4:6) = spin_midpnt{1,j};
+            output(j).meas(1:length(spin_vec{1,j}(:,1)),7:9) = spin_vec{1,j};
+            output(j).meas(1:length(centa_cords{1,j}(:,1)),24:26) = centa_cords{1,j};
+            output(j).meas(1:length(centb_cords{1,j}(:,1)),27:29) = centb_cords{1,j};
+            if length(output(j).meas) > length(frames(~isnan(frames(:,j)),j));
+               output(j).meas = output(j).meas(1:length(frames(~isnan(frames(:,j)),j)),:);
+            else
+                output(j).meas =  output(j).meas;
+            end
+        else
+            output(j+cc).gonad = gonad;
+            output(j+cc).cell = cellIDs{1,j};
+            output(j+cc).meas(1:length(frames(~isnan(frames(:,j)),j)),1) = frames(~isnan(frames(:,j)),j);
+            output(j+cc).meas(1:length(time(~isnan(time(:,j)),j)),2) = time(~isnan(time(:,j)),j);
+            output(j+cc).meas(1:length(spin_length(~isnan(spin_length(:,j)),j)),3) = spin_length(~isnan(spin_length(:,j)),j);
+            output(j+cc).meas(1:length(spin_midpnt{1,j}(:,1)),4:6) = spin_midpnt{1,j};
+            output(j+cc).meas(1:length(spin_vec{1,j}(:,1)),7:9) = spin_vec{1,j};
+            output(j+cc).meas(1:length(centa_cords{1,j}(:,1)),24:26) = centa_cords{1,j};
+            output(j+cc).meas(1:length(centb_cords{1,j}(:,1)),27:29) = centb_cords{1,j};
+            output(j+cc).meas = output(j+cc).meas(1:length(frames(~isnan(frames(:,j)),j)),:);
+            if length(output(j+cc).meas) > length(frames(~isnan(frames(:,j)),j));
+               output(j+cc).meas = output(j+cc).meas(1:length(frames(~isnan(frames(:,j)),j)),:);
+            else
+                output(j+cc).meas =  output(j+cc).meas; 
+            end
+            
+        end
+        
+    end
+    
+    
+    % Find the max frame number for all cells to use in .stl import
+    maxframe = max(max(frames));
+    
+    
+    
+    %%%%%%%%%%% Import rachis data from csv file generated from wrl files
+    frameIdx = zeros(size(wrl_fileList_coords));
+    
+    for j = 1:1:length(wrl_fileList_coords);
+        file = wrl_fileList_coords{j,1};
+        mm = strfind(file, '\'); % change to '\' for Windows OS
+        filename = file(1, (mm(1,length(mm))+1):length(file));
+        nn = strfind(filename, '.csv');
+        oo = strfind(filename, '_coord_');
+        frame = filename(1, (oo(1,1)+7:nn(1,1)-1));
+        frameIdx(j,1) = str2num(frame);
+        wrl_fileList_coords{j,2} = str2num(frame);
+    end
+    wrl_fileList_coords = wrl_fileList_coords(frameIdx<=maxframe,1:2);
+    wrl_fileList_coords = sortrows(wrl_fileList_coords,2);
+    
+    for j = 1:1:length(wrl_fileList_faceNormal);
+        file = wrl_fileList_faceNormal{j,1};
+        mm = strfind(file, '\'); % change to '\' for Windows OS
+        filename = file(1, (mm(1,length(mm))+1):length(file));
+        nn = strfind(filename, '.csv');
+        oo = strfind(filename, '_faceNormal_');
+        frame = filename(1, (oo(1,1)+12:nn(1,1)-1));
+        frameIdx(j,1) = str2num(frame);
+        wrl_fileList_faceNormal{j,2} = str2num(frame);
+    end
+    wrl_fileList_faceNormal = wrl_fileList_faceNormal(frameIdx<=maxframe,1:2);
+    wrl_fileList_faceNormal = sortrows(wrl_fileList_faceNormal,2);
+    
+    for j = 1:1:length(wrl_fileList_normal);
+        file = wrl_fileList_normal{j,1};
+        mm = strfind(file, '\'); % change to '\' for Windows OS
+        filename = file(1, (mm(1,length(mm))+1):length(file));
+        nn = strfind(filename, '.csv');
+        oo = strfind(filename, '_normal_');
+        frame = filename(1, (oo(1,1)+8:nn(1,1)-1));
+        frameIdx(j,1) = str2num(frame);
+        wrl_fileList_normal{j,2} = str2num(frame);
+    end
+    wrl_fileList_normal = wrl_fileList_normal(frameIdx<=maxframe,1:2);
+    wrl_fileList_normal = sortrows(wrl_fileList_normal,2);
+    
+    for j = 1:1:length(wrl_fileList_index);
+        file = wrl_fileList_index{j,1};
+        mm = strfind(file, '\'); % change to '\' for Windows OS
+        filename = file(1, (mm(1,length(mm))+1):length(file));
+        nn = strfind(filename, '.csv');
+        oo = strfind(filename, '_index_');
+        frame = filename(1, (oo(1,1)+7:nn(1,1)-1));
+        wrl_fileList_index{j,2} = str2num(frame);
+        frameIdx(j,1) = str2num(frame);
+    end
+    wrl_fileList_index = wrl_fileList_index(frameIdx<=maxframe,1:2);
+    wrl_fileList_index = sortrows(wrl_fileList_index,2);
+    
+    frameIdx = frameIdx(frameIdx<=maxframe,1);
+
+    % F is n x m matrix where n = number of faces that form the object and 
+    % m = number of vertices for each face (i.e. m = 3 for triangular faces). 
+    % Each value is an index which corresponds to the vertex given in V. 
+    % e.g. F = 3 located at F(1,3) is the vertex represented by the x, y, z 
+    % coordinates in row 3 of V, i.e. V(3,:). N is an n x 3 matrix where n = 
+    % number of faces. Each row contains the x, y, z coordinates for the normal
+    % vector for each face
+    Fvals = cell(1,length(wrl_fileList_index));
+    Vvals = cell(1,length(wrl_fileList_coords));
+    Nvals = cell(1,length(wrl_fileList_faceNormal));
+    
+    for j = 1:1:length(wrl_fileList_index);
+        file = wrl_fileList_index{j,1};
+        [num,txt,raw] = xlsread(file);
+        Fvals{1,j} = num;
+    end
+    
+    for j = 1:1:length(wrl_fileList_coords);
+        file = wrl_fileList_coords{j,1};
+        [num,txt,raw] = xlsread(file);
+        Vvals{1,j} = num;
+    end
+    
+    for j = 1:1:length(wrl_fileList_faceNormal);
+        file = wrl_fileList_faceNormal{j,1};
+        [num,txt,raw] = xlsread(file);
+        Nvals{1,j} = num;
+    end
+    % Calculate the area of each face in Fvals, convert the unit vectors
+    % in Nvals into position vectors, calculate the centroid of each face,
+    % which simplifies things below
+    F_area = cell(1,length(wrl_fileList_faceNormal));
+    Pos_vecs = cell(1,length(wrl_fileList_faceNormal));
+    F_cents = cell(1,length(wrl_fileList_faceNormal));
+    for j = 1:1:length(wrl_fileList_faceNormal);
+        centroids = Vvals{1,j};
+        V1 = NaN(length(Fvals{1,j}),3);
+        V2 = NaN(length(Fvals{1,j}),3);
+        V3 = NaN(length(Fvals{1,j}),3);
+        for k = 1:1:length(Fvals{1, j});
+        V1(k,1:3) = centroids((Fvals{1, j}(k,1))+1,1:3);
+        V2(k,1:3) = centroids((Fvals{1, j}(k,2))+1,1:3);
+        V3(k,1:3) = centroids((Fvals{1, j}(k,3))+1,1:3);
+        end
+        
+        centroids = (V1+V2+V3)./3;
+        F_cents{1,j} = centroids;
+        V1c{1,j} = V1;
+        V2c{1,j} = V2;
+        V3c{1,j} = V3;
+        v = V2-V1;
+        w = V3-V1;
+        xprod = cross(v,w);
+        mags = sqrt(xprod(:,1).^2+xprod(:,2).^2+xprod(:,3).^2);
+        areas = mags.*2;
+        F_area{1,j} = areas;
+        Pos_vecs{1,j} = Nvals{1,j};%.*repmat(mags,1,3);
+        
+    end
+
+    numbcells = length(cellIDs);
+    
+    for j = 1:1:numbcells;
+        if i == 1;
+            frms = output(j).meas(:,1);
+            spinmid = output(j).meas(:,4:6);
+            spinvec = output(j).meas(:,7:9);
+%             output(j).Vvals = Vvals;
+            
+            
+        else
+            frms = output(j+cc).meas(:,1);
+            spinmid = output(j+cc).meas(:,4:6);
+            spinvec = output(j+cc).meas(:,7:9);
+%             output(j+cc).Vvals = Vvals;
+           
+        end
+        out = NaN(length(frms),8);
+        
+        for k = 1:1:length(frms);
+            fr = frms(k,1);
+            if sum(frameIdx == fr) == 1;
+                % extract the face centroid coords, face areas and face normal
+                % position vectors for the relevant time point (frame)
+                centroids = F_cents{1,frameIdx == fr};
+                V1 = V1c{1,frameIdx == fr};
+                V2 = V2c{1,frameIdx == fr};
+                V3 = V3c{1,frameIdx == fr};
+                rach_vecs = Pos_vecs{1,frameIdx == fr};
+                F_areas = F_area{1,frameIdx == fr};
+                
+
+                
+                sm = spinmid(k,:);
+                sm = repmat(sm, max(size(centroids)),1);                
+                % calculate the distance between the spindle midpoint and
+                % each face centroid
+                dists = sqrt(sum(((centroids-sm).^2),2));
+                % Define the radius of the sphere
+                r = 0;
+                % logical array with 1 for every centroid that is within r
+                % microns of spindle midpoint 
+               
+                foo = dists<=r;
+                % calculate the surface area of the rachis that falls
+                % within r microns of spindle midpoint
+                SA = sum(F_areas(foo,1));
+                % define a minimum rachis surface area for analysis.
+                min_area = 50;
+                
+                
+                % if the combined area of all the faces within r microns of
+                % spindle midpoint is greater than this minimum, sum
+                % the surface normal position vectors for all included
+                % faces and calculate the angle between this sum and the
+                % spindle vector.
+               
+                    
+                    
+                % if the combined area is smaller than the minimum, sort the
+                % face areas by their distance to the spindle midpoint,
+                % calculate the cumulative sum and find the row index for
+                % where the combined area exceed the minimum value
+                
+                %  Increase de sphere radius by 0.1 um until the Surface
+                %  Area (SA) inside reach min_area
+                          while SA < min_area &&  r < 8;
+                              
+                              r = r+0.1;
+                              foo = dists<=r;
+                              SA = sum(F_areas(foo,1));
+                              
+                              
+                          
+                          end
+                          %Calculate the normal vector of the Area
+                          rach = sum(rach_vecs(foo,1:3));
+                          spin = spinvec(k,1:3);%spindle vector
+                          
+                          %Calculate the angle between the spindle vector
+                          %and the normal vector
+                          angle = (acos(dot(rach,spin)/(norm(rach)*norm(spin))))*180/pi();
+                          
+                          %Calculate le mean distance between Spindle
+                          %midpoint and centroids
+                          meandist = mean(dists(foo,1));
+                          
+                          %Save the data into the array out
+                          out(k,1) = angle;
+                          out(k,2) = SA;
+                          out(k,3) = sum(foo); % number of faces
+                          out(k,4) = meandist;
+                          out(k,5:7) = rach;
+                          out(k,8) = r;
+                          
+                          %Save the coordinates of the specific triangles
+                          %into output
+                          if i == 1
+                             output(j).sp_centroids{1,k}(:,1:3) = centroids(foo,1:3);%centroids of triangles specific to the dividing cell
+                             output(j).sp_rach_vecs{1,k}(:,1:3) = rach_vecs(foo,1:3);%normal vectors of triangles specific to the dividing cell
+                             output(j).sp_V1{1,k}(:,1:3) = V1(foo,1:3);%xyz coordinates of the first vertex of triangles specific to the dividing cell
+                             output(j).sp_V2{1,k}(:,1:3) = V2(foo,1:3);%xyz coordinates of the second vertex of triangles specific to the dividing cell
+                             output(j).sp_V3{1,k}(:,1:3) = V3(foo,1:3);%xyz coordinates of the third vertex of triangles specific to the dividing cell
+                          else
+                              output(j+cc).sp_centroids{1,k}(:,1:3) = centroids(foo,1:3);
+                              output(j+cc).sp_rach_vecs{1,k}(:,1:3) = rach_vecs(foo,1:3);
+                              output(j+cc).sp_V1{1,k}(:,1:3) = V1(foo,1:3);
+                              output(j+cc).sp_V2{1,k}(:,1:3) = V2(foo,1:3);
+                              output(j+cc).sp_V3{1,k}(:,1:3) = V3(foo,1:3);
+                          end
+                          
+                          clear r foo SA angle meandist rach dists
+            end
+        end
+        
+        %Save the array out into output.meas
+        if i == 1
+            output(j).meas(1:length(frms),10:17)=out;
+        else
+            output(j+cc).meas(1:length(frms),10:17)=out;
+        end
+        clear out 
+    end
+    clearvars -except i TrackMate_fileList output maxframe
+end
+
