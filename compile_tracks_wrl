@@ -7,8 +7,8 @@
 % generate TrackMate .csv file with centrosome coordinates and save in same directory with same file name but with _tracks at the end (i.e. ?2018_04_10_L4440_gonad1_tracks.csv?)
 % run Imaris software to segment/3D render rachis and export .wrl file for each gonad
 % save all wrl files for  gonads in the same folder as the tracks files (i.e. ?2018_04_10_L4440_gonad1?)
-% for each wrl file, run the python scripts vrml2csv that generate the .csv files with 
-% end result: folder with 1 tif, 1 _tracks.csv and csv files from python script
+% for each wrl file, run the python scripts  that generate the .csv files with 
+% end result: folder with 1 tif, 1 csv and 1 folder with numbered stl files per gonad, all with the same root name
 
 folder = uigetdir;
 fileList = getAllFiles(folder);
@@ -413,18 +413,22 @@ for i = 1:1:length(TrackMate_fileList);
         [num,txt,raw] = xlsread(file);
         Fvals{1,j} = num;
     end
+    system('taskkill /F /IM EXCEL.EXE');
     
     for j = 1:1:length(wrl_fileList_coords);
         file = wrl_fileList_coords{j,1};
         [num,txt,raw] = xlsread(file);
         Vvals{1,j} = num;
     end
+    system('taskkill /F /IM EXCEL.EXE');
     
     for j = 1:1:length(wrl_fileList_faceNormal);
         file = wrl_fileList_faceNormal{j,1};
         [num,txt,raw] = xlsread(file);
         Nvals{1,j} = num;
     end
+    system('taskkill /F /IM EXCEL.EXE');
+    
     % Calculate the area of each face in Fvals, convert the unit vectors
     % in Nvals into position vectors, calculate the centroid of each face,
     % which simplifies things below
@@ -505,7 +509,7 @@ for i = 1:1:length(TrackMate_fileList);
                 % within r microns of spindle midpoint
                 SA = sum(F_areas(foo,1));
                 % define a minimum rachis surface area for analysis.
-                min_area = 50;
+                min_area = 100;
                 
                 
                 % if the combined area of all the faces within r microns of
@@ -580,6 +584,7 @@ for i = 1:1:length(TrackMate_fileList);
         end
         clear out 
     end
-    clearvars -except i TrackMate_fileList output maxframe
+    clearvars -except i TrackMate_fileList output maxframe fileList
+    system('taskkill /F /IM EXCEL.EXE');
 end
 
