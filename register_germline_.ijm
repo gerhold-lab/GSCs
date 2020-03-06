@@ -69,6 +69,7 @@ function register_germline(path) {
 				print("Error in ROI list - missing or duplicated frames. Check ROI list for "+file_name+"");
 			}
 			else {
+				run("Set Measurements...", "centroid bounding stack redirect=None decimal=9");
 				roiManager("deselect");
 				roiManager("measure");
 				cenX = newArray(nResults-1);
@@ -159,7 +160,16 @@ function register_germline(path) {
 				Stack.setFrameInterval(t);
 				run("Stack to Hyperstack...", "order=xyczt(default) channels=2 slices="+slices+" frames="+frames+" display=Color");
 				saveAs("Tiff", ""+out+""+img_name+".tif");
+				rename(boo);
+				run("Split Channels");
+				selectWindow("C1-boo");
+				run("Subtract...", "value=100 stack");
+				run("Median...", "radius=2 stack");
+				run("Subtract...", "value=10 stack");
+				run("Enhance Contrast", "saturated=0.35");
+				saveAs("Tiff", ""+out+""+img_name+"_H2Btotrack.tif");
 				close();
+				run("Close All");
 			}
 		}
 	}

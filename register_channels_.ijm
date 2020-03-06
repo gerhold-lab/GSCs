@@ -118,6 +118,6 @@ function register_germline(path) {
 	run("Clear Results");
 }
 
-setBatchMode(true);
+//setBatchMode(true);
 GetFiles(dir);
-setBatchMode(false);
+//setBatchMode(false);
